@@ -12,10 +12,13 @@ import './App.css'
 function App() {
   return (
     <Routes>
+      {/* Full-screen auth pages (no navbar/footer) */}
+      <Route path="login" element={<LoginPage />} />
+      <Route path="signup" element={<SignupPage />} />
+
+      {/* Main app shell with navbar + footer */}
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
-        <Route path="login" element={<LoginPage />} />
-        <Route path="signup" element={<SignupPage />} />
 
         {/* Protected — require login */}
         <Route

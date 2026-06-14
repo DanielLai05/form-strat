@@ -11,11 +11,14 @@ function PasswordInput({
   onChange,
   placeholder = '••••••••',
   required = true,
+  hint,
+  children,
+  className = 'mb-4',
 }) {
   const [show, setShow] = useState(false)
 
   return (
-    <div className="mb-4">
+    <div className={className}>
       <label htmlFor={id} className="form-label">{label}</label>
       <div className="input-group">
         <input
@@ -37,6 +40,8 @@ function PasswordInput({
           <i className={`bi ${show ? 'bi-eye-slash' : 'bi-eye'}`}></i>
         </button>
       </div>
+      {hint && <div className="form-text">{hint}</div>}
+      {children}
     </div>
   )
 }

@@ -1,3 +1,87 @@
+/* Password strength meter */
+.strength-seg {
+  height: 5px;
+  flex: 1 1 0;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+/* Auth screen (login / signup) */
+.auth-screen {
+  min-height: 100vh;
+  background: #eef1f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 960px;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+}
+
+.auth-brand {
+  background: linear-gradient(160deg, #1d4ed8 0%, #2563eb 45%, #3b82f6 100%);
+  color: #fff;
+  padding: 2.5rem;
+  min-height: 560px;
+}
+
+.auth-brand-logo {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+.auth-brand-logo img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.auth-brand-tagline {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.auth-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-feature-check {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-form-panel {
+  padding: 2.5rem;
+}
+
+@media (min-width: 992px) {
+  .auth-form-panel {
+    padding: 3rem;
+    align-self: center;
+  }
+}
+
 /* Brand logo */
 .brand-logo {
   height: 32px;

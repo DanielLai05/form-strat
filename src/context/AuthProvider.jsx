@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -27,19 +31,15 @@ const notConfigured = () => {
 
 /**
  * Provides auth state backed by Firebase Authentication. Exposes the same
- * interface the rest of the app already uses, plus `loading` (auth state still
- * resolving) and `loginWithGoogle`.
+ * interface the rest of the app already uses, plus `loading`, social sign-in,
+ * password reset, and a `remember` flag (session vs persistent login).
  */
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  // Start "loading" only when Firebase is actually configured; otherwise resolve
-  // immediately so public pages render without waiting.
   const [loading, setLoading] = useState(isFirebaseConfigured)
 
   useEffect(() => {
-    // When unconfigured, `loading` already starts false — nothing to subscribe to.
     if (!auth) return undefined
-    // Subscribe to Firebase; the callback fires asynchronously with the session.
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       setUser(mapUser(fbUser))
       setLoading(false)
@@ -47,8 +47,12 @@ function AuthProvider({ children }) {
     return unsubscribe
   }, [])
 
-  const login = useCallback(async ({ email, password }) => {
+  const login = useCallback(async ({ email, password, remember = true }) => {
     if (!auth) notConfigured()
+    await setPersistence(
+      auth,
+      remember ? browserLocalPersistence : browserSessionPersistence
+    )
     await signInWithEmailAndPassword(auth, email, password)
   }, [])
 
@@ -66,6 +70,11 @@ function AuthProvider({ children }) {
     await signInWithPopup(auth, googleProvider)
   }, [])
 
+  const resetPassword = useCallback(async (email) => {
+    if (!auth) notConfigured()
+    await sendPasswordResetEmail(auth, email)
+  }, [])
+
   const logout = useCallback(async () => {
     if (!auth) return
     await signOut(auth)
@@ -79,6 +88,7 @@ function AuthProvider({ children }) {
     login,
     signup,
     loginWithGoogle,
+    resetPassword,
     logout,
   }
 
