@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import BuilderPage from './pages/BuilderPage'
 import DashboardPage from './pages/DashboardPage'
+import FormFillPage from './pages/FormFillPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -12,32 +13,42 @@ import './App.css'
 function App() {
   return (
     <Routes>
-      {/* Full-screen auth pages (no navbar/footer) */}
+      {/* Full-screen pages (no navbar/footer) */}
       <Route path="login" element={<LoginPage />} />
       <Route path="signup" element={<SignupPage />} />
 
-      {/* Main app shell with navbar + footer */}
+      {/* Public form-fill page */}
+      <Route path="form/:id" element={<FormFillPage />} />
+
+      {/* Protected, full-screen app surfaces */}
+      <Route
+        path="dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="builder"
+        element={
+          <ProtectedRoute>
+            <BuilderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="builder/:id"
+        element={
+          <ProtectedRoute>
+            <BuilderPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Marketing shell with navbar + footer */}
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
-
-        {/* Protected — require login */}
-        <Route
-          path="builder"
-          element={
-            <ProtectedRoute>
-              <BuilderPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
