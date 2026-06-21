@@ -6,6 +6,10 @@ function FormCanvas({
   title,
   description,
   fields,
+  bannerUrl,
+  uploadingBanner,
+  onBannerSelect,
+  onBannerRemove,
   selectedId,
   onForm,
   onSelect,
@@ -44,7 +48,42 @@ function FormCanvas({
     <section className="canvas-wrap">
       <div className="canvas">
         <div className="form-sheet">
-          <div className="sheet-banner"></div>
+          <div
+            className="sheet-banner"
+            style={
+              bannerUrl
+                ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                : undefined
+            }
+          >
+            <div className="banner-actions">
+              <label className="banner-btn">
+                <i className="bi bi-image"></i>
+                {bannerUrl ? 'Change' : 'Upload banner'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={uploadingBanner}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) onBannerSelect(file)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+              {bannerUrl && (
+                <button className="banner-btn" type="button" onClick={onBannerRemove}>
+                  <i className="bi bi-trash"></i>Remove
+                </button>
+              )}
+            </div>
+            {uploadingBanner && (
+              <div className="banner-uploading">
+                <span className="spinner-border spinner-border-sm"></span>Uploading…
+              </div>
+            )}
+          </div>
           <div className="sheet-body">
             <input
               className="sheet-title"

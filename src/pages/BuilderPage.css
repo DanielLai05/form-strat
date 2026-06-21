@@ -75,7 +75,13 @@
 .builder .canvas-wrap{ background:var(--canvas); overflow:auto; min-height:0; }
 .builder .canvas{ max-width:660px; margin:32px auto 80px; padding:0 24px; }
 .builder .form-sheet{ background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 1px 3px rgba(16,24,40,.05), 0 20px 48px -32px rgba(16,24,40,.4); overflow:hidden; }
-.builder .sheet-banner{ height:96px; background:linear-gradient(120deg,#2563eb,#1d4ed8); }
+.builder .sheet-banner{ position:relative; height:120px; background:linear-gradient(120deg,#2563eb,#1d4ed8); }
+.builder .banner-actions{ position:absolute; right:12px; bottom:12px; display:flex; gap:8px; }
+.builder .banner-btn{ display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:12.5px; font-weight:600; color:#fff;
+  background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:6px 11px; cursor:pointer; backdrop-filter:blur(4px); }
+.builder .banner-btn:hover{ background:rgba(0,0,0,.5); }
+.builder .banner-btn .bi{ font-size:14px; }
+.builder .banner-uploading{ position:absolute; left:14px; bottom:14px; display:flex; align-items:center; gap:7px; color:#fff; font-size:12.5px; font-weight:600; }
 .builder .sheet-body{ padding:30px 34px 36px; }
 .builder .sheet-title{ font-size:24px; font-weight:800; letter-spacing:-.02em; margin:0 0 7px; border:1px solid transparent; border-radius:8px; padding:2px 6px; width:100%; background:transparent; font-family:inherit; outline:none; }
 .builder .sheet-title:focus{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,.1); }

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { createField } from '../lib/fieldTypes'
+import { uploadBanner } from '../lib/storage'
+import { useAuth } from '../hooks/useAuth'
 import BuilderTopbar from '../components/builder/BuilderTopbar'
 import FieldPalette from '../components/builder/FieldPalette'
 import FormCanvas from '../components/builder/FormCanvas'
@@ -12,17 +14,20 @@ import './BuilderPage.css'
 function BuilderPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [formId, setFormId] = useState(id || null)
   const [title, setTitle] = useState('Untitled form')
   const [description, setDescription] = useState('')
   const [fields, setFields] = useState([])
   const [published, setPublished] = useState(false)
+  const [bannerUrl, setBannerUrl] = useState('')
 
   const [selectedId, setSelectedId] = useState(null)
   const [mode, setMode] = useState('build')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
   const [previewAnswers, setPreviewAnswers] = useState({})
 
   // Load existing form when editing.
@@ -35,6 +40,7 @@ function BuilderPage() {
         setDescription(f.description || '')
         setFields(Array.isArray(f.fields) ? f.fields : [])
         setPublished(Boolean(f.published))
+        setBannerUrl(f.bannerUrl || '')
       })
       .catch(() => {})
   }, [id])
@@ -100,10 +106,43 @@ function BuilderPage() {
     touch()
   }
 
+  // Persist just the banner immediately (when the form already exists) so the
+  // URL lands in the DB without waiting for a full Save. New, unsaved forms get
+  // it on their first Save instead.
+  const persistBanner = async (url) => {
+    if (!formId) {
+      touch()
+      return
+    }
+    try {
+      await apiFetch(`/forms/${formId}`, { method: 'PATCH', body: { bannerUrl: url } })
+    } catch (err) {
+      alert(`Couldn't save banner: ${err.message}`)
+    }
+  }
+
+  const handleBannerSelect = async (file) => {
+    setUploadingBanner(true)
+    try {
+      const url = await uploadBanner(file, user?.uid)
+      setBannerUrl(url)
+      await persistBanner(url)
+    } catch (err) {
+      alert(`Couldn't upload banner: ${err.message}`)
+    } finally {
+      setUploadingBanner(false)
+    }
+  }
+
+  const handleBannerRemove = async () => {
+    setBannerUrl('')
+    await persistBanner('')
+  }
+
   const save = async ({ publish = false } = {}) => {
     setSaving(true)
     const nextPublished = publish ? true : published
-    const payload = { title, description, fields, published: nextPublished }
+    const payload = { title, description, fields, published: nextPublished, bannerUrl }
     try {
       let res
       if (formId) {
@@ -143,6 +182,10 @@ function BuilderPage() {
             title={title}
             description={description}
             fields={fields}
+            bannerUrl={bannerUrl}
+            uploadingBanner={uploadingBanner}
+            onBannerSelect={handleBannerSelect}
+            onBannerRemove={handleBannerRemove}
             selectedId={selectedId}
             onForm={onForm}
             onSelect={setSelectedId}
@@ -157,7 +200,14 @@ function BuilderPage() {
         <section className="canvas-wrap">
           <div className="canvas">
             <div className="form-sheet">
-              <div className="sheet-banner"></div>
+              <div
+                className="sheet-banner"
+                style={
+                  bannerUrl
+                    ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                    : undefined
+                }
+              ></div>
               <div className="sheet-body">
                 <FormRenderer
                   title={title}

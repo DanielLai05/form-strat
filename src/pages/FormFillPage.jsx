@@ -4,13 +4,24 @@ import { apiFetch } from '../lib/api'
 import FormRenderer from '../components/form/FormRenderer'
 import { fieldKey } from '../lib/fieldTypes'
 
-/** Centered card shell with the brand banner stripe. */
-function Shell({ children }) {
+/** Centered card shell. Shows the uploaded banner image, or a thin brand stripe. */
+function Shell({ children, bannerUrl }) {
   return (
     <div className="min-vh-100 bg-light py-5">
       <div className="container" style={{ maxWidth: 640 }}>
-        <div className="card border-0 shadow-sm">
-          <div style={{ height: 12, background: 'linear-gradient(120deg,#2563eb,#1d4ed8)' }} />
+        <div className="card border-0 shadow-sm overflow-hidden">
+          {bannerUrl ? (
+            <div
+              style={{
+                height: 150,
+                backgroundImage: `url(${bannerUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+          ) : (
+            <div style={{ height: 12, background: 'linear-gradient(120deg,#2563eb,#1d4ed8)' }} />
+          )}
           <div className="card-body p-4 p-md-5">{children}</div>
         </div>
       </div>
@@ -96,7 +107,7 @@ function FormFillPage() {
   }
 
   return (
-    <Shell>
+    <Shell bannerUrl={form.bannerUrl}>
       <form onSubmit={handleSubmit}>
         <FormRenderer
           title={form.title}
