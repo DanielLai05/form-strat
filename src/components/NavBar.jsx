@@ -1,19 +1,11 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import logo from '../assets/form-strat-logo-transparent-minimal.png'
-import { useAuth } from '../hooks/useAuth'
+
 
 function NavBar() {
   const [navOpen, setNavOpen] = useState(false)
-  const { isAuthenticated, user, logout } = useAuth()
-  const navigate = useNavigate()
   const close = () => setNavOpen(false)
-
-  const handleLogout = () => {
-    close()
-    logout()
-    navigate('/')
-  }
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
@@ -48,41 +40,14 @@ function NavBar() {
               <span className="vr"></span>
             </li>
 
-            {isAuthenticated ? (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/dashboard" onClick={close}>Dashboard</Link>
-                </li>
-                <li className="nav-item ms-lg-2">
-                  <Link className="btn btn-primary px-3" to="/builder" onClick={close}>
-                    <i className="bi bi-plus-lg me-1"></i>New Form
-                  </Link>
-                </li>
-                <li className="nav-item ms-lg-2 d-flex align-items-center">
-                  <span className="navbar-text me-2 d-none d-lg-inline">
-                    Hi, {user.name}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary px-3"
-                    onClick={handleLogout}
-                  >
-                    Log out
-                  </button>
-                </li>
-              </>
-            ) : (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/login" onClick={close}>Login</Link>
-                </li>
-                <li className="nav-item ms-lg-2">
-                  <Link className="btn btn-primary px-3" to="/signup" onClick={close}>
-                    Sign up
-                  </Link>
-                </li>
-              </>
-            )}
+            <li className="nav-item">
+              <Link className="nav-link" to="/login" onClick={close}>Login</Link>
+            </li>
+            <li className="nav-item ms-lg-2">
+              <Link className="btn btn-primary px-3" to="/signup" onClick={close}>
+                Sign up
+              </Link>
+            </li>
           </ul>
         </div>
       </div>
