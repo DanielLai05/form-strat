@@ -5,6 +5,7 @@ import { apiFetch } from '../lib/api'
 import DashboardSidebar from '../components/dashboard/DashboardSidebar'
 import DashboardTopbar from '../components/dashboard/DashboardTopbar'
 import FormCard from '../components/dashboard/FormCard'
+import AiPromptModal from '../components/AiPromptModal'
 import './DashboardPage.css'
 
 const STAT_ICONS = {
@@ -29,6 +30,7 @@ function DashboardPage() {
   const [error, setError] = useState('')
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
+  const [aiOpen, setAiOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -69,13 +71,21 @@ function DashboardPage() {
 
   const firstName = (user?.name || 'there').split(' ')[0]
   const openForm = (form) => navigate(`/builder/${form.id}`)
+  const handleGenerated = (data) => {
+    setAiOpen(false)
+    navigate('/builder', { state: { generated: data } })
+  }
+  const startBlank = () => {
+    setAiOpen(false)
+    navigate('/builder')
+  }
 
   return (
     <div className="dash">
       <DashboardSidebar formCount={stats.total} />
 
       <div className="main">
-        <DashboardTopbar search={search} onSearch={setSearch} />
+        <DashboardTopbar search={search} onSearch={setSearch} onNewForm={() => setAiOpen(true)} />
 
         <main className="content">
           <div className="page-head">
@@ -148,7 +158,7 @@ function DashboardPage() {
                   </div>
                   <h3>No forms yet</h3>
                   <p>Create your first form to start collecting responses.</p>
-                  <button className="btn-primary" style={{ margin: '0 auto' }} onClick={() => navigate('/builder')}>
+                  <button className="btn-primary" style={{ margin: '0 auto' }} onClick={() => setAiOpen(true)}>
                     <i className="bi bi-plus-lg"></i>
                     Create a form
                   </button>
@@ -159,12 +169,12 @@ function DashboardPage() {
                     <FormCard key={form.id} form={form} index={i} onOpen={openForm} />
                   ))}
 
-                  <button className="fcard newcard" onClick={() => navigate('/builder')}>
+                  <button className="fcard newcard" onClick={() => setAiOpen(true)}>
                     <span className="plus">
                       <i className="bi bi-plus-lg"></i>
                     </span>
                     <b>Create a new form</b>
-                    <span>Start from scratch or a template</span>
+                    <span>Describe it and let AI build it</span>
                   </button>
                 </div>
               )}
@@ -172,6 +182,13 @@ function DashboardPage() {
           )}
         </main>
       </div>
+
+      <AiPromptModal
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        onGenerated={handleGenerated}
+        onStartBlank={startBlank}
+      />
     </div>
   )
 }

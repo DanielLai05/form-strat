@@ -1,6 +1,4 @@
-import { Link } from 'react-router-dom'
-
-function DashboardTopbar({ search, onSearch }) {
+function DashboardTopbar({ search, onSearch, onNewForm }) {
   return (
     <header className="topbar">
       <div className="crumbs">
@@ -25,10 +23,10 @@ function DashboardTopbar({ search, onSearch }) {
         <i className="bi bi-bell"></i>
       </button>
 
-      <Link className="btn-primary" to="/builder">
+      <button className="btn-primary" onClick={onNewForm}>
         <i className="bi bi-plus-lg"></i>
         New Form
-      </Link>
+      </button>
     </header>
   )
 }

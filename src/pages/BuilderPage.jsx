@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { createField } from '../lib/fieldTypes'
 import { uploadBanner } from '../lib/storage'
@@ -11,15 +11,30 @@ import PropertiesPanel from '../components/builder/PropertiesPanel'
 import FormRenderer from '../components/form/FormRenderer'
 import './BuilderPage.css'
 
+const seedField = (f) => {
+  const base = createField(f.type)
+  return {
+    ...base,
+    label: f.label || base.label,
+    help: f.help || '',
+    required: Boolean(f.required),
+    ...(Array.isArray(f.options) ? { options: f.options } : {}),
+    ...(f.max ? { max: f.max } : {}),
+  }
+}
+
 function BuilderPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
 
+  const generated = !id ? location.state?.generated : null
+
   const [formId, setFormId] = useState(id || null)
-  const [title, setTitle] = useState('Untitled form')
-  const [description, setDescription] = useState('')
-  const [fields, setFields] = useState([])
+  const [title, setTitle] = useState(() => generated?.title || 'Untitled form')
+  const [description, setDescription] = useState(() => generated?.description || '')
+  const [fields, setFields] = useState(() => (generated?.fields || []).map(seedField))
   const [published, setPublished] = useState(false)
   const [bannerUrl, setBannerUrl] = useState('')
 
