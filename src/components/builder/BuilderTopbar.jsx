@@ -8,9 +8,11 @@ function BuilderTopbar({
   mode,
   onMode,
   saving,
-  saved,
   onSave,
+  onShare,
+  shareCopied,
   onPublish,
+  onUnpublish,
 }) {
   return (
     <header className="topbar">
@@ -34,12 +36,6 @@ function BuilderTopbar({
 
       <span className="tb-spacer"></span>
 
-      {saving ? (
-        <span className="saved"><i className="bi bi-arrow-repeat"></i>Saving…</span>
-      ) : saved ? (
-        <span className="saved"><i className="bi bi-check-lg"></i>Saved</span>
-      ) : null}
-
       <div className="seg">
         <button className={mode === 'build' ? 'on' : ''} onClick={() => onMode('build')}>
           <i className="bi bi-list"></i>Build
@@ -49,9 +45,16 @@ function BuilderTopbar({
         </button>
       </div>
 
+      <button className="btn-ghost" onClick={onShare}>
+        <i className="bi bi-share me-1"></i>{shareCopied ? 'Copied!' : 'Share'}
+      </button>
       <button className="btn-ghost" onClick={onSave} disabled={saving}>Save</button>
-      <button className="btn-primary" onClick={onPublish} disabled={saving}>
-        <i className="bi bi-send"></i>{published ? 'Update' : 'Publish'}
+      <button
+        className="btn-primary"
+        onClick={published ? onUnpublish : onPublish}
+        disabled={saving}
+      >
+        <i className="bi bi-send"></i>{published ? 'Unpublish' : 'Publish'}
       </button>
     </header>
   )

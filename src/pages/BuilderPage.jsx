@@ -9,6 +9,7 @@ import FieldPalette from '../components/builder/FieldPalette'
 import FormCanvas from '../components/builder/FormCanvas'
 import PropertiesPanel from '../components/builder/PropertiesPanel'
 import FormRenderer from '../components/form/FormRenderer'
+import Toast from '../components/Toast'
 import './BuilderPage.css'
 
 const seedField = (f) => {
@@ -41,8 +42,9 @@ function BuilderPage() {
   const [selectedId, setSelectedId] = useState(null)
   const [mode, setMode] = useState('build')
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [toast, setToast] = useState('')
   const [uploadingBanner, setUploadingBanner] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
   const [previewAnswers, setPreviewAnswers] = useState({})
 
   // Load existing form when editing.
@@ -65,8 +67,10 @@ function BuilderPage() {
     [fields, selectedId]
   )
 
-  // Any edit clears the "Saved" flag.
-  const touch = () => setSaved(false)
+  const showToast = (message) => {
+    setToast(message)
+    setTimeout(() => setToast(''), 2500)
+  }
 
   const addField = (type, index) => {
     const field = createField(type)
@@ -78,20 +82,14 @@ function BuilderPage() {
       next.splice(index, 0, field)
       return next
     })
-    setSelectedId(field.id)
-    touch()
-  }
+    setSelectedId(field.id)  }
 
   const updateSelected = (patch) => {
-    setFields((prev) => prev.map((f) => (f.id === selectedId ? { ...f, ...patch } : f)))
-    touch()
-  }
+    setFields((prev) => prev.map((f) => (f.id === selectedId ? { ...f, ...patch } : f)))  }
 
   const deleteField = (fieldId) => {
     setFields((prev) => prev.filter((f) => f.id !== fieldId))
-    if (selectedId === fieldId) setSelectedId(null)
-    touch()
-  }
+    if (selectedId === fieldId) setSelectedId(null)  }
 
   const duplicateField = (fieldId) => {
     setFields((prev) => {
@@ -101,9 +99,7 @@ function BuilderPage() {
       const next = [...prev]
       next.splice(i + 1, 0, copy)
       return next
-    })
-    touch()
-  }
+    })  }
 
   const reorder = (from, to) => {
     setFields((prev) => {
@@ -111,22 +107,17 @@ function BuilderPage() {
       const [moved] = next.splice(from, 1)
       next.splice(to, 0, moved)
       return next
-    })
-    touch()
-  }
+    })  }
 
   const onForm = (patch) => {
     if (patch.title !== undefined) setTitle(patch.title)
-    if (patch.description !== undefined) setDescription(patch.description)
-    touch()
-  }
+    if (patch.description !== undefined) setDescription(patch.description)  }
 
   // Persist just the banner immediately (when the form already exists) so the
   // URL lands in the DB without waiting for a full Save. New, unsaved forms get
   // it on their first Save instead.
   const persistBanner = async (url) => {
     if (!formId) {
-      touch()
       return
     }
     try {
@@ -154,9 +145,24 @@ function BuilderPage() {
     await persistBanner('')
   }
 
-  const save = async ({ publish = false } = {}) => {
+  const handleShare = async () => {
+    if (!formId) {
+      alert('Save the form first to get a shareable link.')
+      return
+    }
+    const url = `${window.location.origin}/form/${formId}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    } catch {
+      window.prompt('Copy this link:', url)
+    }
+  }
+
+  const save = async ({ publish } = {}) => {
     setSaving(true)
-    const nextPublished = publish ? true : published
+    const nextPublished = publish === undefined ? published : publish
     const payload = { title, description, fields, published: nextPublished, bannerUrl }
     try {
       let res
@@ -167,8 +173,14 @@ function BuilderPage() {
         setFormId(res.data.id)
         navigate(`/builder/${res.data.id}`, { replace: true })
       }
-      if (publish) setPublished(true)
-      setSaved(true)
+      setPublished(nextPublished)
+      showToast(
+        publish === true
+          ? 'Form published'
+          : publish === false
+            ? 'Form unpublished'
+            : 'Form saved'
+      )
     } catch (err) {
       alert(`Couldn't save: ${err.message}`)
     } finally {
@@ -185,9 +197,11 @@ function BuilderPage() {
         mode={mode}
         onMode={setMode}
         saving={saving}
-        saved={saved}
         onSave={() => save()}
+        onShare={handleShare}
+        shareCopied={shareCopied}
         onPublish={() => save({ publish: true })}
+        onUnpublish={() => save({ publish: false })}
       />
 
       {mode === 'build' ? (
@@ -237,6 +251,8 @@ function BuilderPage() {
           </div>
         </section>
       )}
+
+      <Toast message={toast} onClose={() => setToast('')} />
     </div>
   )
 }

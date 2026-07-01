@@ -4,7 +4,12 @@ import { apiFetch } from '../lib/api'
 import FormRenderer from '../components/form/FormRenderer'
 import { fieldKey } from '../lib/fieldTypes'
 
-/** Centered card shell. Shows the uploaded banner image, or a thin brand stripe. */
+const isBlank = (v) =>
+  v === undefined ||
+  v === null ||
+  v === '' ||
+  (Array.isArray(v) && v.length === 0)
+
 function Shell({ children, bannerUrl }) {
   return (
     <div className="min-vh-100 bg-light py-5">
@@ -24,12 +29,14 @@ function Shell({ children, bannerUrl }) {
           )}
           <div className="card-body p-4 p-md-5">{children}</div>
         </div>
+        <p className="text-center text-secondary small mt-3 mb-0">
+          Powered by <span className="fw-semibold">Form Strat</span>
+        </p>
       </div>
     </div>
   )
 }
 
-/** Public page: anyone with the link can fill and submit a form. */
 function FormFillPage() {
   const { id } = useParams()
 
@@ -49,9 +56,8 @@ function FormFillPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    // Basic required-field check.
     const missing = (form.fields || []).find(
-      (f) => f.required && !answers[fieldKey(f)]
+      (f) => f.required && isBlank(answers[fieldKey(f)])
     )
     if (missing) {
       setError(`Please answer: ${missing.label}`)
@@ -94,9 +100,23 @@ function FormFillPage() {
     )
   }
 
-  if (done) {
+  if (!form.published) {
     return (
       <Shell>
+        <div className="text-center py-4">
+          <i className="bi bi-lock text-secondary" style={{ fontSize: '2.5rem' }}></i>
+          <h1 className="h4 fw-bold mt-3">This form isn’t accepting responses</h1>
+          <p className="text-secondary mb-0">
+            It hasn’t been published yet. Check back later.
+          </p>
+        </div>
+      </Shell>
+    )
+  }
+
+  if (done) {
+    return (
+      <Shell bannerUrl={form.bannerUrl}>
         <div className="text-center py-4">
           <i className="bi bi-check-circle-fill text-success" style={{ fontSize: '2.5rem' }}></i>
           <h1 className="h4 fw-bold mt-3">Thanks for your response!</h1>
@@ -108,7 +128,7 @@ function FormFillPage() {
 
   return (
     <Shell bannerUrl={form.bannerUrl}>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <FormRenderer
           title={form.title}
           description={form.description}
