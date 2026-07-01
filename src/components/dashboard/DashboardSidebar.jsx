@@ -4,37 +4,43 @@ import { useAuth } from '../../hooks/useAuth'
 import { initials } from '../../lib/format'
 
 const WORKSPACE = [
-  { icon: 'bi-grid-1x2', label: 'Dashboard', active: true },
-  { icon: 'bi-file-earmark-text', label: 'Forms', badge: true },
-  { icon: 'bi-graph-up', label: 'Responses' },
-  { icon: 'bi-stars', label: 'AI Insights' },
+  { key: 'dashboard', icon: 'bi-grid-1x2', label: 'Dashboard', to: '/dashboard' },
+  { key: 'forms', icon: 'bi-file-earmark-text', label: 'Forms', to: '/forms', badge: true },
+  { key: 'responses', icon: 'bi-graph-up', label: 'Responses' },
+  { key: 'insights', icon: 'bi-stars', label: 'AI Insights' },
 ]
 
 const ACCOUNT = [
-  { icon: 'bi-gear', label: 'Settings' },
-  { icon: 'bi-question-circle', label: 'Help & support' },
+  { key: 'settings', icon: 'bi-gear', label: 'Settings' },
+  { key: 'help', icon: 'bi-question-circle', label: 'Help & support' },
 ]
 
-function NavItem({ item, formCount }) {
+function NavItem({ item, formCount, active }) {
+  const isActive = active === item.key
+  const className = `nav-link d-flex align-items-center gap-2 ${
+    isActive ? 'active' : 'text-white-50'
+  }`
+  const inner = (
+    <>
+      <i className={`bi ${item.icon}`}></i>
+      {item.label}
+      {item.badge && formCount > 0 && (
+        <span className="badge text-bg-light ms-auto">{formCount}</span>
+      )}
+    </>
+  )
   return (
     <li className="nav-item">
-      <span
-        className={`nav-link d-flex align-items-center gap-2 ${
-          item.active ? 'active' : 'text-white-50'
-        }`}
-        role="button"
-      >
-        <i className={`bi ${item.icon}`}></i>
-        {item.label}
-        {item.badge && formCount > 0 && (
-          <span className="badge text-bg-light ms-auto">{formCount}</span>
-        )}
-      </span>
+      {item.to ? (
+        <Link to={item.to} className={className}>{inner}</Link>
+      ) : (
+        <span className={className} role="button">{inner}</span>
+      )}
     </li>
   )
 }
 
-function DashboardSidebar({ formCount }) {
+function DashboardSidebar({ formCount, active = 'dashboard' }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -67,7 +73,7 @@ function DashboardSidebar({ formCount }) {
       </div>
       <ul className="nav nav-pills flex-column gap-1">
         {WORKSPACE.map((item) => (
-          <NavItem key={item.label} item={item} formCount={formCount} />
+          <NavItem key={item.label} item={item} formCount={formCount} active={active} />
         ))}
       </ul>
 
@@ -76,7 +82,7 @@ function DashboardSidebar({ formCount }) {
       </div>
       <ul className="nav nav-pills flex-column gap-1">
         {ACCOUNT.map((item) => (
-          <NavItem key={item.label} item={item} formCount={formCount} />
+          <NavItem key={item.label} item={item} formCount={formCount} active={active} />
         ))}
       </ul>
 

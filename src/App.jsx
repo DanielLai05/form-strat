@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import BuilderPage from './pages/BuilderPage'
 import DashboardPage from './pages/DashboardPage'
+import FormsPage from './pages/FormsPage'
 import FormFillPage from './pages/FormFillPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -26,6 +27,14 @@ function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="forms"
+        element={
+          <ProtectedRoute>
+            <FormsPage />
           </ProtectedRoute>
         }
       />

@@ -1,10 +1,10 @@
-function DashboardTopbar({ search, onSearch, onNewForm }) {
+function DashboardTopbar({ search, onSearch, onNewForm, crumb = 'Dashboard' }) {
   return (
     <header className="topbar">
       <div className="crumbs">
         <span>Workspace</span>
         <i className="bi bi-chevron-right"></i>
-        <b>Dashboard</b>
+        <b>{crumb}</b>
       </div>
 
       <div className="search">
