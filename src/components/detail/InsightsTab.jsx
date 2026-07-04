@@ -46,16 +46,33 @@ function Samples({ samples }) {
   )
 }
 
-/** Responses-over-time as a compact bar chart. */
+/** Responses-over-time as a compact bar chart with a per-bar hover tooltip. */
 function OverTime({ series }) {
+  const [hover, setHover] = useState(null)
   if (!series || series.length === 0) return null
   const max = Math.max(...series.map((d) => d.count))
+  const clear = (i) => setHover((h) => (h === i ? null : h))
   return (
     <div className="ins-card" style={{ gridColumn: '1 / -1' }}>
       <div className="q"><b>Responses over time</b></div>
       <div className="spark">
-        {series.map((d) => (
-          <div className="col" key={d.date} title={`${d.date}: ${d.count}`}>
+        {series.map((d, i) => (
+          <div
+            className={`col${hover === i ? ' hovered' : ''}`}
+            key={d.date}
+            tabIndex={0}
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => clear(i)}
+            onFocus={() => setHover(i)}
+            onBlur={() => clear(i)}
+          >
+            {hover === i && (
+              <div className="spark-tip" role="tooltip">
+                <b>{d.count}</b>
+                <span>{d.count === 1 ? 'response' : 'responses'}</span>
+                <span className="spark-tip-date">{d.date}</span>
+              </div>
+            )}
             <div className="bar" style={{ height: `${Math.max(3, (d.count / max) * 68)}px` }}></div>
             <span className="lab">{d.date.slice(5)}</span>
           </div>
