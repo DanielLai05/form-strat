@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../lib/api'
+import { timeAgo } from '../../lib/format'
 
 const CHOICE = new Set(['select', 'radio', 'checkbox'])
 const NUMERIC = new Set(['number', 'rating'])
@@ -71,17 +72,23 @@ function InsightsTab({ formId, hasResponses }) {
   const [error, setError] = useState('')
 
   const [insights, setInsights] = useState(null)
+  const [insightsAt, setInsightsAt] = useState(null)
+  const [stale, setStale] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [aiError, setAiError] = useState('')
 
   useEffect(() => {
     if (!hasResponses) return undefined
     let cancelled = false
+    // ai=false returns the cached narrative (if any) without calling the model.
     apiFetch(`/forms/${formId}/analytics?ai=false`)
       .then((res) => {
         if (cancelled) return
         setStats(res.data.stats)
         setAiConfigured(res.data.aiConfigured)
+        setInsights(res.data.insights ?? null)
+        setInsightsAt(res.data.insightsAt ?? null)
+        setStale(Boolean(res.data.insightsStale))
       })
       .catch((err) => !cancelled && setError(err.message))
       .finally(() => !cancelled && setLoading(false))
@@ -95,8 +102,13 @@ function InsightsTab({ formId, hasResponses }) {
     setAiError('')
     try {
       const res = await apiFetch(`/forms/${formId}/analytics`)
-      if (res.data.insights) setInsights(res.data.insights)
-      else setAiError('The AI could not generate insights for this data.')
+      if (res.data.insights) {
+        setInsights(res.data.insights)
+        setInsightsAt(res.data.insightsAt ?? null)
+        setStale(false)
+      } else {
+        setAiError('The AI could not generate insights for this data.')
+      }
     } catch (err) {
       setAiError(err.message)
     } finally {
@@ -153,6 +165,23 @@ function InsightsTab({ formId, hasResponses }) {
               <ul>{insights.recommendations.map((r, i) => <li key={i}>{r}</li>)}</ul>
             </>
           )}
+          <div className="ins-foot">
+            <span className="ins-stamp">
+              {stale ? (
+                <span className="ins-stale">
+                  <i className="bi bi-exclamation-circle"></i>New responses since this was generated
+                </span>
+              ) : insightsAt ? (
+                <>Generated {timeAgo(insightsAt)}</>
+              ) : null}
+            </span>
+            {aiConfigured && (
+              <button className="ins-regen" onClick={generate} disabled={generating}>
+                <i className="bi bi-arrow-clockwise"></i>{generating ? 'Regenerating…' : 'Regenerate'}
+              </button>
+            )}
+          </div>
+          {aiError && <p className="text-muted-sm" style={{ marginTop: 8, color: '#e11d48' }}>{aiError}</p>}
         </div>
       ) : aiConfigured ? (
         <div className="ins-generate">

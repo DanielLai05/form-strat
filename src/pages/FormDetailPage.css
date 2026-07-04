@@ -47,6 +47,15 @@
 .dash .ins-narrative ul{ margin:0 0 6px; padding-left:20px; }
 .dash .ins-narrative li{ font-size:14px; color:var(--ink-2); margin-bottom:5px; line-height:1.5; }
 .dash .ins-narrative .ins-sub{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:14px 0 6px; }
+.dash .ins-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid #dbe5fb; }
+.dash .ins-stamp{ font-size:12.5px; color:var(--muted); }
+.dash .ins-stale{ display:inline-flex; align-items:center; gap:6px; color:var(--amber); font-weight:600; }
+.dash .ins-stale .bi{ font-size:14px; }
+.dash .ins-regen{ font-family:inherit; font-size:13px; font-weight:600; color:var(--blue-700); background:#fff; border:1px solid #cdd9f5; border-radius:8px;
+  padding:6px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:.14s; }
+.dash .ins-regen:hover{ background:var(--blue-50); border-color:var(--blue-600); }
+.dash .ins-regen:disabled{ opacity:.6; cursor:default; }
+.dash .ins-regen .bi{ font-size:14px; }
 
 .dash .ins-generate{ background:var(--card); border:1px dashed #cdd4e0; border-radius:14px; padding:24px; text-align:center; margin-bottom:22px; }
 .dash .ins-generate p{ font-size:14px; color:var(--muted); margin:0 0 14px; }
