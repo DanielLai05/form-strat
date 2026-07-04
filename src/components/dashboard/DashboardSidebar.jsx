@@ -6,13 +6,6 @@ import { initials } from '../../lib/format'
 const WORKSPACE = [
   { key: 'dashboard', icon: 'bi-grid-1x2', label: 'Dashboard', to: '/dashboard' },
   { key: 'forms', icon: 'bi-file-earmark-text', label: 'Forms', to: '/forms', badge: true },
-  { key: 'responses', icon: 'bi-graph-up', label: 'Responses' },
-  { key: 'insights', icon: 'bi-stars', label: 'AI Insights' },
-]
-
-const ACCOUNT = [
-  { key: 'settings', icon: 'bi-gear', label: 'Settings' },
-  { key: 'help', icon: 'bi-question-circle', label: 'Help & support' },
 ]
 
 function NavItem({ item, formCount, active }) {
@@ -73,15 +66,6 @@ function DashboardSidebar({ formCount, active = 'dashboard' }) {
       </div>
       <ul className="nav nav-pills flex-column gap-1">
         {WORKSPACE.map((item) => (
-          <NavItem key={item.label} item={item} formCount={formCount} active={active} />
-        ))}
-      </ul>
-
-      <div className="text-uppercase text-secondary fw-bold px-2 mb-1 mt-3" style={{ fontSize: 11, letterSpacing: '.1em' }}>
-        Account
-      </div>
-      <ul className="nav nav-pills flex-column gap-1">
-        {ACCOUNT.map((item) => (
           <NavItem key={item.label} item={item} formCount={formCount} active={active} />
         ))}
       </ul>

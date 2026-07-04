@@ -64,8 +64,30 @@
 .dash .tab.active{ background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(16,24,40,.08); }
 .dash .toolbar .spacer{ flex:1; }
 
+/* dashboard two-column layout: activity + recent forms */
+.dash .dash-cols{ display:grid; grid-template-columns:340px 1fr; gap:24px; align-items:start; }
+.dash .panel{ min-width:0; }
+.dash .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.dash .panel-head h2{ font-size:16px; font-weight:800; letter-spacing:-.01em; margin:0; }
+.dash .view-all{ font-size:13px; font-weight:600; color:var(--blue-700); text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+.dash .view-all:hover{ text-decoration:underline; }
+.dash .view-all .bi{ font-size:13px; }
+
+.dash .activity{ list-style:none; margin:0; padding:0; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+.dash .activity li + li{ border-top:1px solid var(--line-2); }
+.dash .activity a{ display:flex; align-items:center; gap:11px; padding:13px 15px; text-decoration:none; color:var(--ink-2); transition:background .12s; }
+.dash .activity a:hover{ background:#fafbfe; }
+.dash .act-ic{ width:32px; height:32px; flex:none; border-radius:9px; background:var(--blue-50); color:var(--blue-700); display:grid; place-items:center; }
+.dash .act-ic .bi{ font-size:15px; }
+.dash .act-text{ font-size:13.5px; min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dash .act-text b{ color:var(--ink); font-weight:700; }
+.dash .act-when{ font-size:12px; color:var(--faint); white-space:nowrap; flex:none; }
+.dash .activity-empty{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px dashed #cdd4e0; border-radius:14px; padding:20px; color:var(--muted); font-size:13.5px; }
+.dash .activity-empty .bi{ font-size:18px; color:var(--faint); }
+
 /* forms grid */
 .dash .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.dash .grid.grid-2{ grid-template-columns:repeat(2,1fr); }
 .dash .fcard{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; cursor:pointer; text-align:left;
   transition:border-color .15s, box-shadow .15s, transform .15s; display:flex; flex-direction:column; min-height:172px; font-family:inherit; color:inherit; }
 .dash .fcard:hover{ border-color:#d4dbe6; box-shadow:0 10px 26px -18px rgba(16,24,40,.4); transform:translateY(-2px); }
@@ -117,6 +139,7 @@
 .dash .empty .art .bi{ font-size:32px; }
 .dash .newcard .plus .bi{ font-size:22px; }
 
+@media(max-width:1200px){ .dash .dash-cols{ grid-template-columns:1fr; } }
 @media(max-width:1080px){ .dash .stats{ grid-template-columns:repeat(2,1fr); } .dash .grid{ grid-template-columns:repeat(2,1fr); } }
 /* Sidebar hides at Bootstrap's lg breakpoint (d-none d-lg-flex), so collapse the grid there too. */
-@media(max-width:991.98px){ .dash{ grid-template-columns:1fr; } .dash .grid{ grid-template-columns:1fr; } }
+@media(max-width:991.98px){ .dash{ grid-template-columns:1fr; } .dash .grid, .dash .grid.grid-2{ grid-template-columns:1fr; } }

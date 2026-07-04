@@ -165,14 +165,15 @@ function BuilderPage() {
     const nextPublished = publish === undefined ? published : publish
     const payload = { title, description, fields, published: nextPublished, bannerUrl }
     try {
+      const isNew = !formId
       let res
       if (formId) {
         res = await apiFetch(`/forms/${formId}`, { method: 'PATCH', body: payload })
       } else {
         res = await apiFetch('/forms', { method: 'POST', body: payload })
         setFormId(res.data.id)
-        navigate(`/builder/${res.data.id}`, { replace: true })
       }
+      const savedId = formId || res.data.id
       setPublished(nextPublished)
       showToast(
         publish === true
@@ -181,6 +182,13 @@ function BuilderPage() {
             ? 'Form unpublished'
             : 'Form saved'
       )
+      // On publish, the natural next step is sharing — send them to the hub's
+      // Share tab. Otherwise a brand-new form just gains its /builder/:id URL.
+      if (publish === true) {
+        navigate(`/forms/${savedId}?tab=share`)
+      } else if (isNew) {
+        navigate(`/builder/${res.data.id}`, { replace: true })
+      }
     } catch (err) {
       alert(`Couldn't save: ${err.message}`)
     } finally {
@@ -191,6 +199,7 @@ function BuilderPage() {
   return (
     <div className="builder">
       <BuilderTopbar
+        backTo={formId ? `/forms/${formId}` : '/forms'}
         name={title}
         onName={(v) => onForm({ title: v })}
         published={published}
