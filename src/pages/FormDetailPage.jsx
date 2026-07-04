@@ -129,6 +129,11 @@ function FormDetailView({ id }) {
                       <i className="bi bi-link-45deg"></i>Copy link
                     </button>
                   )}
+                  {submissions.length > 0 && (
+                    <Link className="btn-ghost-2" to={`/forms/${id}/report`}>
+                      <i className="bi bi-file-earmark-text"></i>Report
+                    </Link>
+                  )}
                   <button className="btn-primary" onClick={() => navigate(`/builder/${id}`)}>
                     <i className="bi bi-pencil"></i>Edit form
                   </button>

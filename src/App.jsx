@@ -6,6 +6,7 @@ import BuilderPage from './pages/BuilderPage'
 import DashboardPage from './pages/DashboardPage'
 import FormsPage from './pages/FormsPage'
 import FormDetailPage from './pages/FormDetailPage'
+import ReportPage from './pages/ReportPage'
 import FormFillPage from './pages/FormFillPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -44,6 +45,14 @@ function App() {
         element={
           <ProtectedRoute>
             <FormDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="forms/:id/report"
+        element={
+          <ProtectedRoute>
+            <ReportPage />
           </ProtectedRoute>
         }
       />
