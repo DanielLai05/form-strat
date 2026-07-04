@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
-import { timeAgo } from '../lib/format'
+import { timeAgo, formHref } from '../lib/format'
 import DashboardSidebar from '../components/dashboard/DashboardSidebar'
 import DashboardTopbar from '../components/dashboard/DashboardTopbar'
 import AiPromptModal from '../components/AiPromptModal'
@@ -15,7 +15,7 @@ const TABS = [
   { key: 'drafts', label: 'Drafts' },
 ]
 
-function RowActions({ form, onEdit, onDelete }) {
+function RowActions({ form, onView, onEdit, onCopyLink, onDelete }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -39,20 +39,28 @@ function RowActions({ form, onEdit, onDelete }) {
       </button>
       {open && (
         <div className="menu">
-          {form.published && (
-            <a
-              className="menu-item"
-              href={`/form/${form.id}`}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setOpen(false)}
-            >
-              <i className="bi bi-box-arrow-up-right"></i>Open live form
-            </a>
-          )}
+          <button className="menu-item" onClick={() => { setOpen(false); onView() }}>
+            <i className="bi bi-table"></i>View responses
+          </button>
           <button className="menu-item" onClick={() => { setOpen(false); onEdit() }}>
             <i className="bi bi-pencil"></i>Edit
           </button>
+          {form.published && (
+            <>
+              <button className="menu-item" onClick={() => { setOpen(false); onCopyLink() }}>
+                <i className="bi bi-link-45deg"></i>Copy link
+              </button>
+              <a
+                className="menu-item"
+                href={`/form/${form.id}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setOpen(false)}
+              >
+                <i className="bi bi-box-arrow-up-right"></i>Open live form
+              </a>
+            </>
+          )}
           <button className="menu-item danger" onClick={() => { setOpen(false); onDelete() }}>
             <i className="bi bi-trash"></i>Delete
           </button>
@@ -124,6 +132,15 @@ function FormsPage() {
   const startBlank = () => {
     setAiOpen(false)
     navigate('/builder')
+  }
+
+  const copyLink = async (id) => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/form/${id}`)
+      showToast('Link copied to clipboard')
+    } catch {
+      showToast('Could not copy link')
+    }
   }
 
   const deleteOne = async (id) => {
@@ -212,7 +229,7 @@ function FormsPage() {
                     const responses = form.submissionCount ?? 0
                     const fieldCount = Array.isArray(form.fields) ? form.fields.length : 0
                     return (
-                      <tr key={form.id} onClick={() => navigate(`/builder/${form.id}`)}>
+                      <tr key={form.id} onClick={() => navigate(formHref(form))}>
                         <td>
                           <div className="ft">
                             <b>{form.title}</b>
@@ -226,10 +243,16 @@ function FormsPage() {
                             <span className="status draft"><span className="d"></span>Draft</span>
                           )}
                         </td>
-                        <td>
-                          <span className="resp" style={responses ? undefined : { color: 'var(--faint)' }}>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="resp-link"
+                            style={responses ? undefined : { color: 'var(--faint)' }}
+                            onClick={() => navigate(`/forms/${form.id}`)}
+                            title="View responses"
+                          >
                             {responses}
-                          </span>
+                          </button>
                         </td>
                         <td className="col-hide">{fieldCount}</td>
                         <td className="col-hide muted-cell">
@@ -239,7 +262,9 @@ function FormsPage() {
                           <div className="row-actions">
                             <RowActions
                               form={form}
+                              onView={() => navigate(`/forms/${form.id}`)}
                               onEdit={() => navigate(`/builder/${form.id}`)}
+                              onCopyLink={() => copyLink(form.id)}
                               onDelete={() => deleteOne(form.id)}
                             />
                           </div>

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { apiFetch } from '../lib/api'
+import { formHref, timeAgo } from '../lib/format'
 import DashboardSidebar from '../components/dashboard/DashboardSidebar'
 import DashboardTopbar from '../components/dashboard/DashboardTopbar'
 import FormCard from '../components/dashboard/FormCard'
@@ -15,35 +16,29 @@ const STAT_ICONS = {
   drafts: <i className="bi bi-pencil-square"></i>,
 }
 
-const TABS = [
-  { key: 'all', label: 'All forms' },
-  { key: 'live', label: 'Live' },
-  { key: 'drafts', label: 'Drafts' },
-]
+const RECENT_LIMIT = 6
 
 function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
   const [forms, setForms] = useState([])
+  const [activity, setActivity] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    apiFetch('/forms')
-      .then((res) => {
-        if (!cancelled) setForms(res.data || [])
+    Promise.all([apiFetch('/forms'), apiFetch('/activity')])
+      .then(([formsRes, activityRes]) => {
+        if (cancelled) return
+        setForms(formsRes.data || [])
+        setActivity(activityRes.data || [])
       })
-      .catch((err) => {
-        if (!cancelled) setError(err.message)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+      .catch((err) => !cancelled && setError(err.message))
+      .finally(() => !cancelled && setLoading(false))
     return () => {
       cancelled = true
     }
@@ -56,21 +51,23 @@ function DashboardPage() {
     return { total, responses, live, drafts: total - live }
   }, [forms])
 
-  const visibleForms = useMemo(() => {
+  const recentForms = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return forms.filter((f) => {
-      if (tab === 'live' && !f.published) return false
-      if (tab === 'drafts' && f.published) return false
-      if (!q) return true
-      return (
+    return [...forms]
+      .filter((f) =>
+        !q ||
         f.title?.toLowerCase().includes(q) ||
         f.description?.toLowerCase().includes(q)
       )
-    })
-  }, [forms, tab, search])
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)
+      )
+      .slice(0, RECENT_LIMIT)
+  }, [forms, search])
 
   const firstName = (user?.name || 'there').split(' ')[0]
-  const openForm = (form) => navigate(`/builder/${form.id}`)
+  const openForm = (form) => navigate(formHref(form))
   const handleGenerated = (data) => {
     setAiOpen(false)
     navigate('/builder', { state: { generated: data } })
@@ -97,7 +94,7 @@ function DashboardPage() {
 
           {error && (
             <div className="empty" style={{ marginBottom: 24 }}>
-              <h3>Couldn&apos;t load your forms</h3>
+              <h3>Couldn&apos;t load your dashboard</h3>
               <p>{error}</p>
             </div>
           )}
@@ -134,28 +131,9 @@ function DashboardPage() {
                 </div>
               </div>
 
-              {/* toolbar */}
-              <div className="toolbar">
-                <div className="tabs">
-                  {TABS.map((t) => (
-                    <button
-                      key={t.key}
-                      className={`tab${tab === t.key ? ' active' : ''}`}
-                      onClick={() => setTab(t.key)}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="spacer"></div>
-              </div>
-
-              {/* grid or empty */}
               {forms.length === 0 ? (
                 <div className="empty">
-                  <div className="art">
-                    <i className="bi bi-inbox"></i>
-                  </div>
+                  <div className="art"><i className="bi bi-inbox"></i></div>
                   <h3>No forms yet</h3>
                   <p>Create your first form to start collecting responses.</p>
                   <button className="btn-primary" style={{ margin: '0 auto' }} onClick={() => setAiOpen(true)}>
@@ -164,18 +142,53 @@ function DashboardPage() {
                   </button>
                 </div>
               ) : (
-                <div className="grid">
-                  {visibleForms.map((form, i) => (
-                    <FormCard key={form.id} form={form} index={i} onOpen={openForm} />
-                  ))}
+                <div className="dash-cols">
+                  {/* recent activity */}
+                  <section className="panel">
+                    <div className="panel-head">
+                      <h2>Recent activity</h2>
+                    </div>
+                    {activity.length === 0 ? (
+                      <div className="activity-empty">
+                        <i className="bi bi-bell-slash"></i>
+                        <span>No responses yet. Share a form to start collecting.</span>
+                      </div>
+                    ) : (
+                      <ul className="activity">
+                        {activity.map((a) => (
+                          <li key={a.id}>
+                            <Link to={`/forms/${a.formId}`}>
+                              <span className="act-ic"><i className="bi bi-inbox-fill"></i></span>
+                              <span className="act-text">
+                                <b>{a.formTitle}</b> received a response
+                              </span>
+                              <span className="act-when">{timeAgo(a.createdAt)}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
 
-                  <button className="fcard newcard" onClick={() => setAiOpen(true)}>
-                    <span className="plus">
-                      <i className="bi bi-plus-lg"></i>
-                    </span>
-                    <b>Create a new form</b>
-                    <span>Describe it and let AI build it</span>
-                  </button>
+                  {/* recent forms */}
+                  <section className="panel">
+                    <div className="panel-head">
+                      <h2>Your forms</h2>
+                      <Link to="/forms" className="view-all">
+                        View all<i className="bi bi-arrow-right"></i>
+                      </Link>
+                    </div>
+                    <div className="grid grid-2">
+                      {recentForms.map((form, i) => (
+                        <FormCard key={form.id} form={form} index={i} onOpen={openForm} />
+                      ))}
+                      <button className="fcard newcard" onClick={() => setAiOpen(true)}>
+                        <span className="plus"><i className="bi bi-plus-lg"></i></span>
+                        <b>Create a new form</b>
+                        <span>Describe it and let AI build it</span>
+                      </button>
+                    </div>
+                  </section>
                 </div>
               )}
             </>

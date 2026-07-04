@@ -13,10 +13,11 @@ function BuilderTopbar({
   shareCopied,
   onPublish,
   onUnpublish,
+  backTo = '/dashboard',
 }) {
   return (
     <header className="topbar">
-      <Link className="back" to="/dashboard">
+      <Link className="back" to={backTo}>
         <i className="bi bi-arrow-left"></i>Back
       </Link>
       <span className="tb-sep"></span>

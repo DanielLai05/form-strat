@@ -15,6 +15,15 @@ export function timeAgo(dateInput) {
   return date.toLocaleDateString()
 }
 
+/**
+ * Where a click on a form should land. A live form's owner almost always wants
+ * to see responses, so it opens the detail hub; a draft has nothing to analyze
+ * yet, so editing is the right default.
+ */
+export function formHref(form) {
+  return form?.published ? `/forms/${form.id}` : `/builder/${form.id}`
+}
+
 /** Up to two uppercase initials from a name or email. */
 export function initials(nameOrEmail) {
   if (!nameOrEmail) return 'U'
