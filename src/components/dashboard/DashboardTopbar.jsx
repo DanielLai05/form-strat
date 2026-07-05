@@ -20,11 +20,6 @@ function DashboardTopbar({ search, onSearch, onNewForm, crumb = 'Dashboard' }) {
 
       <div className="spacer"></div>
 
-      <button className="icon-btn" title="Notifications">
-        <span className="dot"></span>
-        <i className="bi bi-bell"></i>
-      </button>
-
       {onNewForm && (
         <button className="btn-primary" onClick={onNewForm}>
           <i className="bi bi-plus-lg"></i>
