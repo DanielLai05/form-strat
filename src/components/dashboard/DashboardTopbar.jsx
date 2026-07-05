@@ -28,7 +28,7 @@ function DashboardTopbar({ search, onSearch, onNewForm, crumb = 'Dashboard' }) {
       {onNewForm && (
         <button className="btn-primary" onClick={onNewForm}>
           <i className="bi bi-plus-lg"></i>
-          New Form
+          <span className="nf-label">New Form</span>
         </button>
       )}
     </header>

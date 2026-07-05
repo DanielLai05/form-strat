@@ -36,7 +36,7 @@ function ResponsesTab({ form, submissions, onCopyLink }) {
   }
 
   return (
-    <div className="table-card">
+    <div className="table-card table-scroll">
       <table>
         <thead>
           <tr>

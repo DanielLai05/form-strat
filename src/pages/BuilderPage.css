@@ -157,4 +157,44 @@
 .builder .empty-canvas{ text-align:center; color:var(--muted); padding:30px 10px; font-size:13.5px; }
 
 @media(max-width:1180px){ .builder .work{ grid-template-columns:228px 1fr 280px; } }
-@media(max-width:900px){ .builder .panel.left{ display:none; } .builder .work{ grid-template-columns:1fr 300px; } }
+
+@media(max-width:900px){
+  .builder{ display:block; height:auto; min-height:100vh; }
+  .builder .topbar{ flex-wrap:wrap; height:auto; padding:10px 12px; row-gap:10px; position:sticky; top:0; }
+  .builder .tb-sep{ display:none; }
+  .builder .form-name{ flex:1 1 160px; min-width:0; }
+  .builder .form-name input{ width:100%; min-width:0; }
+  .builder .form-name .edit{ display:none; }
+  .builder .tb-spacer{ display:none; }
+
+  .builder .work{ display:flex; flex-direction:column; }
+  .builder .panel{ min-height:0; }
+
+  .builder .panel.left{ border-right:none; border-bottom:1px solid var(--line); }
+  .builder .panel.left .panel-head{ padding:12px 14px 4px; }
+  .builder .pal-search{ display:none; }
+  .builder .panel.left .panel-scroll{ overflow:visible; padding:0 14px 12px; }
+  .builder .pal-group{ padding:10px 2px 6px; }
+  .builder .blocks{ display:flex; overflow-x:auto; gap:8px; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+  .builder .block{ flex:0 0 auto; flex-direction:row; align-items:center; gap:8px; padding:8px 12px; }
+  .builder .block .b-ic{ width:26px; height:26px; }
+  .builder .block b{ white-space:nowrap; }
+
+  .builder .canvas-wrap{ overflow:visible; }
+  .builder .canvas{ margin:16px auto 20px; padding:0 12px; }
+  .builder .sheet-body{ padding:20px 16px 24px; }
+  .builder .field-block{ margin:0 0 8px; }
+  .builder .field-block .grip{ display:none !important; }
+  .builder .field-block .actions{ display:flex; position:static; justify-content:flex-end; margin-bottom:6px; }
+
+  .builder .panel.right{ border-left:none; border-top:1px solid var(--line); }
+  .builder .panel.right .panel-scroll{ overflow:visible; }
+}
+
+@media(max-width:575.98px){
+  .builder .tb-logo{ display:none; }
+  .builder .back{ padding:7px 6px; }
+  .builder .btn-ghost, .builder .btn-primary{ padding:8px 12px; font-size:13px; }
+  .builder .seg button{ padding:6px 10px; }
+  .builder .sheet-title{ font-size:20px; }
+}
