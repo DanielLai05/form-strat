@@ -139,7 +139,41 @@
 .dash .empty .art .bi{ font-size:32px; }
 .dash .newcard .plus .bi{ font-size:22px; }
 
+/* mobile app bar (shown below lg, where the sidebar is hidden) */
+.dash .dash-mobilebar{ background:var(--sidebar); color:#fff; position:sticky; top:0; z-index:20; }
+.dash .dash-mobilebar-row{ display:flex; align-items:center; gap:10px; padding:10px 14px; }
+.dash .dash-mobilemenu{ display:flex; flex-direction:column; gap:2px; padding:4px 10px 12px; border-top:1px solid rgba(255,255,255,.08); }
+.dash .dash-mobilelink{ display:flex; align-items:center; gap:11px; padding:11px 10px; border-radius:9px; font-size:14.5px; font-weight:500;
+  color:#aeb8cc; text-decoration:none; }
+.dash .dash-mobilelink .bi{ font-size:17px; }
+.dash .dash-mobilelink.on{ background:var(--blue); color:#fff; }
+.dash .dash-mobileuser{ display:flex; align-items:center; gap:10px; padding:11px 10px 4px; margin-top:4px;
+  border-top:1px solid rgba(255,255,255,.08); font-size:13.5px; font-weight:600; color:#fff; }
+
 @media(max-width:1200px){ .dash .dash-cols{ grid-template-columns:1fr; } }
 @media(max-width:1080px){ .dash .stats{ grid-template-columns:repeat(2,1fr); } .dash .grid{ grid-template-columns:repeat(2,1fr); } }
 /* Sidebar hides at Bootstrap's lg breakpoint (d-none d-lg-flex), so collapse the grid there too. */
-@media(max-width:991.98px){ .dash{ grid-template-columns:1fr; } .dash .grid, .dash .grid.grid-2{ grid-template-columns:1fr; } }
+@media(max-width:991.98px){
+  .dash{ grid-template-columns:1fr; grid-template-rows:auto 1fr; }
+  .dash .grid, .dash .grid.grid-2{ grid-template-columns:1fr; }
+  .dash .topbar{ top:47px; }
+}
+
+@media(max-width:767.98px){
+  .dash .content{ padding:20px 14px 44px; }
+  .dash .topbar{ padding:0 14px; gap:10px; }
+  .dash .page-head{ flex-wrap:wrap; margin-bottom:18px; }
+  .dash .page-head h1{ font-size:22px; }
+  .dash .stats{ gap:10px; margin-bottom:20px; }
+  .dash .stat{ padding:13px 14px; }
+  .dash .stat .val{ font-size:22px; }
+}
+
+@media(max-width:575.98px){
+  .dash .crumbs{ display:none; }
+  .dash .search{ margin-left:0; }
+  .dash .nf-label{ display:none; }
+  .dash .topbar .btn-primary{ padding:10px 12px; }
+  .dash .icon-btn{ display:none; }
+  .dash .fcard{ min-height:0; }
+}

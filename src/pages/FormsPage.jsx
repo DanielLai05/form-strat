@@ -218,7 +218,7 @@ function FormsPage() {
                   <tr>
                     <th>Form</th>
                     <th>Status</th>
-                    <th>Responses</th>
+                    <th className="col-hide-sm">Responses</th>
                     <th className="col-hide">Fields</th>
                     <th className="col-hide">Last edited</th>
                     <th></th>
@@ -243,7 +243,7 @@ function FormsPage() {
                             <span className="status draft"><span className="d"></span>Draft</span>
                           )}
                         </td>
-                        <td onClick={(e) => e.stopPropagation()}>
+                        <td className="col-hide-sm" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
                             className="resp-link"

@@ -172,8 +172,17 @@
 .dash .share-notice div{ font-size:13.5px; color:#8a5a12; }
 .dash .share-notice b{ font-weight:700; }
 
+.dash .table-scroll{ overflow-x:auto; }
+.dash .table-scroll table{ min-width:560px; }
+
 @media(max-width:900px){
   .dash .ins-grid{ grid-template-columns:1fr; }
   .dash .resp-detail{ grid-template-columns:1fr; }
   .dash .hub-head{ flex-wrap:wrap; }
+  .dash .hub-actions{ flex-wrap:wrap; width:100%; }
+  .dash .hub-tabs{ overflow-x:auto; }
+  .dash .hub-tab{ white-space:nowrap; flex:none; }
+  .dash .rating-histo{ flex-wrap:wrap; }
+  .dash .num-summary{ flex-wrap:wrap; gap:18px; }
+  .dash .ins-foot{ flex-wrap:wrap; }
 }
