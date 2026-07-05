@@ -2,15 +2,46 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { timeAgo } from '../lib/format'
+import { CHOICE_TYPES, NUMERIC_TYPES, pct, ratingScale } from '../lib/stats'
 import DashboardSidebar from '../components/dashboard/DashboardSidebar'
-import { FieldStat, OverTime } from '../components/detail/StatViews'
-import { pct } from '../lib/stats'
+import {
+  FigureBars,
+  FigureColumns,
+  FigureRating,
+  FigureNumberBins,
+  FigureSamples,
+} from '../components/report/ReportFigures'
 import Toast from '../components/Toast'
 import './DashboardPage.css'
 import './FormDetailPage.css'
 import './ReportPage.css'
 
-const SEVERITY = { high: 'sev-high', medium: 'sev-medium', info: 'sev-info' }
+const TYPE_LABELS = {
+  text: 'short text',
+  textarea: 'paragraph text',
+  email: 'email',
+  tel: 'phone',
+  number: 'number',
+  date: 'date',
+  select: 'dropdown',
+  radio: 'single choice',
+  checkbox: 'multiple choice',
+  rating: 'rating',
+  file: 'file upload',
+}
+
+const SECTIONS = [
+  { id: 'exec', no: '', title: 'Executive Summary' },
+  { id: 'intro', no: '1', title: 'Introduction & Background' },
+  { id: 'method', no: '2', title: 'Methodology' },
+  { id: 'trends', no: '3', title: 'Response Trends' },
+  { id: 'questions', no: '4', title: 'Question-by-Question Analysis' },
+  { id: 'themes', no: '5', title: 'Cross-Cutting Themes' },
+  { id: 'findings', no: '6', title: 'Key Findings' },
+  { id: 'recs', no: '7', title: 'Recommendations' },
+  { id: 'conclusion', no: '8', title: 'Conclusion' },
+  { id: 'appendix', no: 'A', title: 'Appendix A — Data Tables' },
+]
 
 const fmtDate = (d) =>
   new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -22,7 +53,6 @@ function ReportPage() {
 
 function ReportView({ id }) {
   const [analytics, setAnalytics] = useState(null)
-  const [history, setHistory] = useState([])
   const [current, setCurrent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -36,15 +66,10 @@ function ReportView({ id }) {
       apiFetch(`/forms/${id}/analytics`),
       apiFetch(`/forms/${id}/reports`),
     ])
-      .then(async ([aRes, listRes]) => {
+      .then(([aRes, reportRes]) => {
         if (cancelled) return
         setAnalytics(aRes.data)
-        const list = listRes.data || []
-        setHistory(list)
-        if (list.length > 0) {
-          const full = await apiFetch(`/forms/${id}/reports/${list[0].id}`)
-          if (!cancelled) setCurrent(full.data)
-        }
+        setCurrent(reportRes.data ?? null)
       })
       .catch((err) => !cancelled && setError(err.message))
       .finally(() => !cancelled && setLoading(false))
@@ -59,26 +84,12 @@ function ReportView({ id }) {
     try {
       const res = await apiFetch(`/forms/${id}/reports`, { method: 'POST' })
       setCurrent(res.data)
-      setHistory((h) => [
-        { id: res.data.id, responseCount: res.data.responseCount, createdAt: res.data.createdAt },
-        ...h,
-      ])
       setToast('Report generated')
       setTimeout(() => setToast(''), 2500)
     } catch (err) {
       setGenError(err.message)
     } finally {
       setGenerating(false)
-    }
-  }
-
-  const openVersion = async (reportId) => {
-    if (Number(reportId) === current?.id) return
-    try {
-      const res = await apiFetch(`/forms/${id}/reports/${reportId}`)
-      setCurrent(res.data)
-    } catch (err) {
-      setGenError(err.message)
     }
   }
 
@@ -92,6 +103,45 @@ function ReportView({ id }) {
   const report = current?.content
   const outdated =
     current && stats ? stats.totalSubmissions !== current.responseCount : false
+
+  const typeBreakdown = useMemo(() => {
+    if (!stats) return ''
+    const counts = {}
+    for (const f of stats.perField) {
+      const label = TYPE_LABELS[f.type] || f.type
+      counts[label] = (counts[label] || 0) + 1
+    }
+    return Object.entries(counts)
+      .map(([label, n]) => `${n} ${label}`)
+      .join(', ')
+  }, [stats])
+
+  const avgAnswerRate = useMemo(() => {
+    if (!stats || stats.perField.length === 0) return 0
+    return stats.perField.reduce((s, f) => s + (f.answerRate || 0), 0) / stats.perField.length
+  }, [stats])
+
+  const choiceFields = useMemo(
+    () => (stats?.perField || []).filter((f) => CHOICE_TYPES.has(f.type)),
+    [stats]
+  )
+  const numericFields = useMemo(
+    () => (stats?.perField || []).filter((f) => NUMERIC_TYPES.has(f.type)),
+    [stats]
+  )
+
+  const execSummary = report?.executiveSummary || report?.overview
+  const showIntro = Boolean(report?.executiveSummary && report?.overview)
+
+  const questionFigureNos = useMemo(() => {
+    const isChartAt = (report?.questionAnalysis || []).map((q) => {
+      const field = statByLabel[q.label]
+      return Boolean(field && CHOICE_TYPES.has(field.type))
+    })
+    return isChartAt.map((isChart, i) =>
+      isChart ? 1 + isChartAt.slice(0, i + 1).filter(Boolean).length : null
+    )
+  }, [report, statByLabel])
 
   return (
     <div className="dash rp-shell">
@@ -125,19 +175,6 @@ function ReportView({ id }) {
                   <span>{analytics.title}</span>
                 </div>
                 <div className="rp-toolbar-actions">
-                  {history.length > 1 && (
-                    <select
-                      className="rp-version"
-                      value={current?.id || ''}
-                      onChange={(e) => openVersion(e.target.value)}
-                    >
-                      {history.map((h) => (
-                        <option key={h.id} value={h.id}>
-                          {fmtDate(h.createdAt)} · {h.responseCount} responses
-                        </option>
-                      ))}
-                    </select>
-                  )}
                   {report && (
                     <button className="btn-ghost-2" onClick={() => window.print()}>
                       <i className="bi bi-printer"></i>Print / PDF
@@ -146,13 +183,20 @@ function ReportView({ id }) {
                   {analytics.aiConfigured && stats.totalSubmissions > 0 && (
                     <button className="btn-primary" onClick={generate} disabled={generating}>
                       <i className="bi bi-stars"></i>
-                      {report ? 'Generate new report' : 'Generate report'}
+                      {report ? 'Regenerate report' : 'Generate report'}
                     </button>
                   )}
                 </div>
               </div>
 
               {genError && <div className="alert alert-danger small no-print">{genError}</div>}
+
+              {outdated && report && !generating && (
+                <div className="ins-stale-bar no-print" style={{ maxWidth: 880, margin: '0 auto 16px' }}>
+                  <i className="bi bi-exclamation-triangle"></i>
+                  This report was generated from {current.responseCount} responses — the form now has {stats.totalSubmissions}. Generate a new report for the latest picture.
+                </div>
+              )}
 
               {generating ? (
                 <div className="rp-sheet rp-loading">
@@ -176,59 +220,131 @@ function ReportView({ id }) {
                   )}
                 </div>
               ) : (
-                <article className="rp-sheet">
-                  <header className="rp-header">
-                    <div className="rp-brand no-print-hide">
-                      <i className="bi bi-stars"></i> Form Strat · Response Analysis Report
-                    </div>
+                <article className="rp-sheet rp-doc">
+                  <header className="rp-cover">
+                    <div className="rp-eyebrow">Response Analysis Report</div>
                     <h1>{analytics.title}</h1>
                     {analytics.description && <p className="rp-desc">{analytics.description}</p>}
-                    <div className="rp-facts">
-                      <div><b>{current.responseCount}</b><span>responses</span></div>
-                      <div><b>{stats.perField.length}</b><span>questions</span></div>
-                      {report.period && (
-                        <div><b>{report.period.from} → {report.period.to}</b><span>collection period</span></div>
-                      )}
-                      <div><b>{fmtDate(current.createdAt)}</b><span>generated</span></div>
-                    </div>
-                    {outdated && (
-                      <div className="ins-stale-bar no-print">
-                        <i className="bi bi-exclamation-triangle"></i>
-                        This report was generated from {current.responseCount} responses — the form now has {stats.totalSubmissions}. Generate a new report for the latest picture.
-                      </div>
-                    )}
+                    <div className="rp-cover-rule"></div>
+                    <table className="rp-cover-facts">
+                      <tbody>
+                        <tr><td>Sample</td><td>{current.responseCount} responses</td></tr>
+                        <tr><td>Instrument</td><td>{stats.perField.length} questions, online form</td></tr>
+                        {report.period && (
+                          <tr><td>Collection period</td><td>{report.period.from} to {report.period.to}</td></tr>
+                        )}
+                        <tr><td>Report date</td><td>{fmtDate(current.createdAt)}</td></tr>
+                        <tr><td>Reference</td><td>FS-{analytics.formId}-{String(current.id).padStart(3, '0')}</td></tr>
+                        <tr><td>Prepared by</td><td>Form Strat AI Analytics</td></tr>
+                      </tbody>
+                    </table>
                     <p className="rp-attrib">
-                      AI-generated analysis grounded in computed statistics. Verify claims against the figures shown in each section.
+                      Narrative sections of this report are AI-generated interpretations grounded in
+                      statistics computed directly from response data. All figures and tables are
+                      computed, not generated. Verify narrative claims against the accompanying data.
                     </p>
                   </header>
 
-                  <section className="rp-section">
-                    <h2><span>1</span>Overview</h2>
-                    <p>{report.overview}</p>
+                  <nav className="rp-toc">
+                    <h2>Contents</h2>
+                    <ol>
+                      {SECTIONS.filter((s) => s.id !== 'intro' || showIntro).map((s) => (
+                        <li key={s.id}>
+                          <a href={`#${s.id}`}>
+                            <span className="rp-toc-no">{s.no}</span>
+                            {s.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                  </nav>
+
+                  <section className="rp-section" id="exec">
+                    <h2 className="rp-exec-title">Executive Summary</h2>
+                    <p className="rp-exec">{execSummary}</p>
                   </section>
 
-                  <section className="rp-section">
-                    <h2><span>2</span>Response Trends</h2>
+                  {showIntro && (
+                    <section className="rp-section" id="intro">
+                      <h2><span>1</span>Introduction &amp; Background</h2>
+                      <p>{report.overview}</p>
+                    </section>
+                  )}
+
+                  <section className="rp-section" id="method">
+                    <h2><span>2</span>Methodology</h2>
+                    <p>
+                      Data was collected through a self-administered online form comprising{' '}
+                      {stats.perField.length} questions ({typeBreakdown}). A total of{' '}
+                      {current.responseCount} responses were received
+                      {report.period && <> between {report.period.from} and {report.period.to}</>}.
+                      The mean per-question answer rate was {pct(avgAnswerRate)}. Participation was
+                      voluntary and unincentivized; respondents were not required to answer
+                      non-mandatory questions, so the effective sample size varies by question and
+                      is reported as <i>n</i> throughout.
+                    </p>
+                    <p>
+                      All counts, percentages, and summary statistics in this report were computed
+                      directly from stored responses using SQL aggregation. The narrative analysis
+                      was produced by a large language model constrained to interpret only these
+                      pre-computed statistics. Per-question response rates are listed in
+                      Appendix A, Table A.1.
+                    </p>
+                  </section>
+
+                  <section className="rp-section" id="trends">
+                    <h2><span>3</span>Response Trends</h2>
                     <p>{report.trendAnalysis}</p>
-                    <div className="rp-chart">
-                      <OverTime series={stats.responsesOverTime} />
-                    </div>
+                    <figure className="rp-figure">
+                      <FigureColumns series={stats.responsesOverTime} />
+                      <figcaption>
+                        <b>Figure 1.</b> Responses per day over the collection period
+                        (days with at least one response).
+                        <span className="rp-source">Source: {current.responseCount} responses collected via Form Strat.</span>
+                      </figcaption>
+                    </figure>
                   </section>
 
-                  <section className="rp-section">
-                    <h2><span>3</span>Question-by-Question Analysis</h2>
+                  <section className="rp-section" id="questions">
+                    <h2><span>4</span>Question-by-Question Analysis</h2>
                     {report.questionAnalysis.map((q, i) => {
                       const field = statByLabel[q.label]
+                      const isChart = field && CHOICE_TYPES.has(field.type)
+                      const figNo = questionFigureNos[i]
                       return (
                         <div className="rp-question" key={i}>
                           <h3>
-                            3.{i + 1} {q.label}
-                            {field && <span className="rp-qmeta">{field.answered} answered · {pct(field.answerRate)}</span>}
+                            4.{i + 1} {q.label}
+                            {field && (
+                              <span className="rp-qmeta">
+                                n = {field.answered} · {pct(field.answerRate)} answered
+                              </span>
+                            )}
                           </h3>
                           {field && (
-                            <div className="rp-qstat">
-                              <FieldStat field={field} />
-                            </div>
+                            <figure className="rp-figure rp-figure-q">
+                              {CHOICE_TYPES.has(field.type) ? (
+                                <FigureBars field={field} />
+                              ) : field.type === 'rating' ? (
+                                <FigureRating field={field} scale={ratingScale(field, analytics.fields)} />
+                              ) : NUMERIC_TYPES.has(field.type) ? (
+                                <FigureNumberBins field={field} />
+                              ) : (
+                                <FigureSamples samples={field.samples} />
+                              )}
+                              <figcaption>
+                                {isChart ? (
+                                  <><b>Figure {figNo}.</b> Distribution of responses (n = {field.answered}).
+                                  {field.type === 'checkbox' && ' Multi-select; shares may exceed 100%.'}</>
+                                ) : field.type === 'rating' ? (
+                                  <>Rating distribution and mean (n = {field.numeric?.count ?? field.answered}).</>
+                                ) : NUMERIC_TYPES.has(field.type) ? (
+                                  <>Distribution and summary statistics (n = {field.numeric?.count ?? field.answered}).</>
+                                ) : (
+                                  <>Illustrative verbatim responses (sample of {field.samples?.length ?? 0}).</>
+                                )}
+                              </figcaption>
+                            </figure>
                           )}
                           <p>{q.analysis}</p>
                         </div>
@@ -237,50 +353,147 @@ function ReportView({ id }) {
                   </section>
 
                   {report.crossCuttingThemes.length > 0 && (
-                    <section className="rp-section">
-                      <h2><span>4</span>Cross-Cutting Themes</h2>
-                      <ul className="rp-themes">
+                    <section className="rp-section" id="themes">
+                      <h2><span>5</span>Cross-Cutting Themes</h2>
+                      <ol className="rp-themes">
                         {report.crossCuttingThemes.map((t, i) => (
-                          <li key={i}><i className="bi bi-diagram-3"></i><span>{t}</span></li>
+                          <li key={i}>{t}</li>
                         ))}
-                      </ul>
+                      </ol>
                     </section>
                   )}
 
-                  <section className="rp-section">
-                    <h2><span>5</span>Key Findings</h2>
-                    <ul className="ins-findings">
+                  <section className="rp-section" id="findings">
+                    <h2><span>6</span>Key Findings</h2>
+                    <dl className="rp-findings">
                       {report.keyFindings.map((f, i) => (
-                        <li key={i}>
-                          <span className={`sev ${SEVERITY[f.severity] || 'sev-info'}`}>{f.severity}</span>
-                          <span>{f.finding}</span>
-                        </li>
+                        <div className="rp-finding" key={i}>
+                          <dt>
+                            F{i + 1}
+                            <em className={`rp-sev rp-sev-${f.severity}`}>{f.severity}</em>
+                          </dt>
+                          <dd>{f.finding}</dd>
+                        </div>
                       ))}
-                    </ul>
+                    </dl>
                   </section>
 
-                  <section className="rp-section">
-                    <h2><span>6</span>Recommendations</h2>
-                    <ol className="rp-recs">
+                  <section className="rp-section" id="recs">
+                    <h2><span>7</span>Recommendations</h2>
+                    <dl className="rp-findings">
                       {report.recommendations.map((r, i) => (
-                        <li key={i}>
-                          <b>{r.recommendation}</b>
-                          {r.rationale && <span>{r.rationale}</span>}
-                        </li>
+                        <div className="rp-finding" key={i}>
+                          <dt>R{i + 1}</dt>
+                          <dd>
+                            <b>{r.recommendation}</b>
+                            {r.rationale && <span className="rp-rationale">{r.rationale}</span>}
+                            {r.addresses?.length > 0 && (
+                              <span className="rp-addresses">Addresses {r.addresses.join(', ')}</span>
+                            )}
+                          </dd>
+                        </div>
                       ))}
-                    </ol>
+                    </dl>
                   </section>
 
-                  <section className="rp-section">
-                    <h2><span>7</span>Conclusion</h2>
+                  <section className="rp-section" id="conclusion">
+                    <h2><span>8</span>Conclusion</h2>
                     <p>{report.conclusion}</p>
                     {report.caveats && (
-                      <p className="rp-caveats"><b>Caveats:</b> {report.caveats}</p>
+                      <p className="rp-caveats"><b>Limitations.</b> {report.caveats}</p>
+                    )}
+                  </section>
+
+                  <section className="rp-section rp-appendix" id="appendix">
+                    <h2><span>A</span>Appendix A — Data Tables</h2>
+
+                    <div className="rp-table-block">
+                      <p className="rp-table-title"><b>Table A.1.</b> Per-question response rates.</p>
+                      <table className="rp-table">
+                        <thead>
+                          <tr>
+                            <th>Question</th>
+                            <th>Type</th>
+                            <th className="num">n</th>
+                            <th className="num">Answer rate</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stats.perField.map((f) => (
+                            <tr key={f.name || f.label}>
+                              <td>{f.label}</td>
+                              <td>{TYPE_LABELS[f.type] || f.type}</td>
+                              <td className="num">{f.answered}</td>
+                              <td className="num">{pct(f.answerRate)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {choiceFields.map((f, i) => {
+                      const entries = Object.entries(f.distribution || {}).sort((a, b) => b[1] - a[1])
+                      return (
+                        <div className="rp-table-block" key={f.name || f.label}>
+                          <p className="rp-table-title">
+                            <b>Table A.{i + 2}.</b> {f.label} — frequency distribution (n = {f.answered}).
+                          </p>
+                          <table className="rp-table">
+                            <thead>
+                              <tr>
+                                <th>Option</th>
+                                <th className="num">Count</th>
+                                <th className="num">Share</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {entries.map(([value, count]) => (
+                                <tr key={value}>
+                                  <td>{value}</td>
+                                  <td className="num">{count}</td>
+                                  <td className="num">{f.answered ? pct(count / f.answered) : '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    })}
+
+                    {numericFields.length > 0 && (
+                      <div className="rp-table-block">
+                        <p className="rp-table-title">
+                          <b>Table A.{choiceFields.length + 2}.</b> Numeric questions — summary statistics.
+                        </p>
+                        <table className="rp-table">
+                          <thead>
+                            <tr>
+                              <th>Question</th>
+                              <th className="num">n</th>
+                              <th className="num">Min</th>
+                              <th className="num">Mean</th>
+                              <th className="num">Max</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {numericFields.map((f) => (
+                              <tr key={f.name || f.label}>
+                                <td>{f.label}</td>
+                                <td className="num">{f.numeric?.count ?? '—'}</td>
+                                <td className="num">{f.numeric?.min ?? '—'}</td>
+                                <td className="num">{f.numeric?.mean ?? '—'}</td>
+                                <td className="num">{f.numeric?.max ?? '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </section>
 
                   <footer className="rp-footer">
-                    Generated {timeAgo(current.createdAt)} by Form Strat AI · based on {current.responseCount} responses
+                    Form Strat · Response Analysis Report · FS-{analytics.formId}-{String(current.id).padStart(3, '0')} ·
+                    generated {timeAgo(current.createdAt)} from {current.responseCount} responses
                   </footer>
                 </article>
               )}

@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { timeAgo } from '../../lib/format'
 import { FieldStat, OverTime } from './StatViews'
-import { pct } from '../../lib/stats'
+import { pct, ratingScale, cumulative, lastNDaysCount } from '../../lib/stats'
 
 const SEVERITY = { high: 'sev-high', medium: 'sev-medium', info: 'sev-info' }
 
 function InsightsTab({ formId, hasResponses }) {
   const [stats, setStats] = useState(null)
+  const [fieldsJson, setFieldsJson] = useState([])
   const [aiConfigured, setAiConfigured] = useState(false)
   const [loading, setLoading] = useState(hasResponses)
   const [error, setError] = useState('')
+  const [timeMode, setTimeMode] = useState('daily')
 
   const [report, setReport] = useState(null)
   const [reportAt, setReportAt] = useState(null)
@@ -27,6 +29,7 @@ function InsightsTab({ formId, hasResponses }) {
       .then((res) => {
         if (cancelled) return
         setStats(res.data.stats)
+        setFieldsJson(Array.isArray(res.data.fields) ? res.data.fields : [])
         setAiConfigured(res.data.aiConfigured)
         setReport(res.data.report ?? null)
         setReportAt(res.data.reportGeneratedAt ?? null)
@@ -65,6 +68,26 @@ function InsightsTab({ formId, hasResponses }) {
   const newSince =
     stale && reportCount != null && stats ? stats.totalSubmissions - reportCount : 0
 
+  const weekCount = useMemo(
+    () => lastNDaysCount(stats?.responsesOverTime, 7),
+    [stats]
+  )
+  const avgAnswerRate = useMemo(() => {
+    if (!stats || stats.perField.length === 0) return 0
+    return stats.perField.reduce((s, f) => s + (f.answerRate || 0), 0) / stats.perField.length
+  }, [stats])
+  const ratingField = useMemo(
+    () => stats?.perField.find((f) => f.type === 'rating' && f.numeric),
+    [stats]
+  )
+  const timeSeries = useMemo(
+    () =>
+      timeMode === 'cumulative'
+        ? cumulative(stats?.responsesOverTime)
+        : stats?.responsesOverTime,
+    [stats, timeMode]
+  )
+
   if (!hasResponses) {
     return (
       <div className="empty">
@@ -97,6 +120,37 @@ function InsightsTab({ formId, hasResponses }) {
 
   return (
     <>
+      <div className="stats ins-kpis">
+        <div className="stat">
+          <div className="top"><span className="ic"><i className="bi bi-people"></i></span></div>
+          <div className="val">{stats.totalSubmissions}</div>
+          <div className="lbl">Total responses</div>
+        </div>
+        <div className="stat">
+          <div className="top"><span className="ic"><i className="bi bi-calendar-week"></i></span></div>
+          <div className="val">{weekCount}</div>
+          <div className="lbl">Last 7 days</div>
+        </div>
+        <div className="stat">
+          <div className="top"><span className="ic"><i className="bi bi-check2-square"></i></span></div>
+          <div className="val">{pct(avgAnswerRate)}</div>
+          <div className="lbl">Avg answer rate</div>
+        </div>
+        {ratingField ? (
+          <div className="stat">
+            <div className="top"><span className="ic ic-star"><i className="bi bi-star-fill"></i></span></div>
+            <div className="val">{ratingField.numeric.mean}</div>
+            <div className="lbl">Avg rating</div>
+          </div>
+        ) : (
+          <div className="stat">
+            <div className="top"><span className="ic"><i className="bi bi-list-ol"></i></span></div>
+            <div className="val">{stats.perField.length}</div>
+            <div className="lbl">Questions</div>
+          </div>
+        )}
+      </div>
+
       {generating ? (
         <div className="ins-generate">
           <div className="spinner-border spinner-border-sm text-primary" role="status">
@@ -190,8 +244,24 @@ function InsightsTab({ formId, hasResponses }) {
 
       <div className="ins-grid">
         <div className="ins-card" style={{ gridColumn: '1 / -1' }}>
-          <div className="q"><b>Responses over time</b></div>
-          <OverTime series={stats.responsesOverTime} />
+          <div className="q">
+            <b>Responses over time</b>
+            <span className="time-seg">
+              <button
+                className={timeMode === 'daily' ? 'on' : ''}
+                onClick={() => setTimeMode('daily')}
+              >
+                Daily
+              </button>
+              <button
+                className={timeMode === 'cumulative' ? 'on' : ''}
+                onClick={() => setTimeMode('cumulative')}
+              >
+                Cumulative
+              </button>
+            </span>
+          </div>
+          <OverTime series={timeSeries} />
         </div>
         {stats.perField.map((f) => (
           <div className="ins-card" key={f.name || f.label}>
@@ -199,7 +269,7 @@ function InsightsTab({ formId, hasResponses }) {
               <b>{f.label}</b>
               <span className="type">{f.type}</span>
             </div>
-            <FieldStat field={f} />
+            <FieldStat field={f} ratingMax={ratingScale(f, fieldsJson)} />
             {highlightByLabel[f.label] && (
               <div className="ins-highlight">
                 <i className="bi bi-stars"></i>
