@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { timeAgo } from '../lib/format'
-import { CHOICE_TYPES, NUMERIC_TYPES, pct } from '../lib/stats'
+import { CHOICE_TYPES, NUMERIC_TYPES, pct, ratingScale } from '../lib/stats'
 import DashboardSidebar from '../components/dashboard/DashboardSidebar'
 import {
   FigureBars,
   FigureColumns,
-  FigureNumeric,
+  FigureRating,
+  FigureNumberBins,
   FigureSamples,
 } from '../components/report/ReportFigures'
 import Toast from '../components/Toast'
@@ -323,17 +324,22 @@ function ReportView({ id }) {
                           {field && (
                             <figure className="rp-figure rp-figure-q">
                               {CHOICE_TYPES.has(field.type) ? (
-                                <FigureBars distribution={field.distribution} answered={field.answered} />
+                                <FigureBars field={field} />
+                              ) : field.type === 'rating' ? (
+                                <FigureRating field={field} scale={ratingScale(field, analytics.fields)} />
                               ) : NUMERIC_TYPES.has(field.type) ? (
-                                <FigureNumeric numeric={field.numeric} />
+                                <FigureNumberBins field={field} />
                               ) : (
                                 <FigureSamples samples={field.samples} />
                               )}
                               <figcaption>
                                 {isChart ? (
-                                  <><b>Figure {figNo}.</b> Distribution of responses (n = {field.answered}).</>
+                                  <><b>Figure {figNo}.</b> Distribution of responses (n = {field.answered}).
+                                  {field.type === 'checkbox' && ' Multi-select; shares may exceed 100%.'}</>
+                                ) : field.type === 'rating' ? (
+                                  <>Rating distribution and mean (n = {field.numeric?.count ?? field.answered}).</>
                                 ) : NUMERIC_TYPES.has(field.type) ? (
-                                  <>Summary statistics (n = {field.numeric?.count ?? field.answered}).</>
+                                  <>Distribution and summary statistics (n = {field.numeric?.count ?? field.answered}).</>
                                 ) : (
                                   <>Illustrative verbatim responses (sample of {field.samples?.length ?? 0}).</>
                                 )}

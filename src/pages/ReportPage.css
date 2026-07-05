@@ -85,6 +85,18 @@
 .dash .rpf-x-slot{ flex:1; max-width:24px; font-family:'Inter',system-ui,sans-serif; font-size:9.5px; color:var(--doc-faint);
   text-align:center; overflow:visible; white-space:nowrap; }
 
+/* rating + binned histograms */
+.dash .rpf-rating{ display:flex; gap:28px; align-items:flex-end; }
+.dash .rpf-rating-hero b{ display:block; font-family:'Inter',system-ui,sans-serif; font-size:30px; font-weight:700; color:var(--doc-ink); line-height:1; }
+.dash .rpf-rating-hero span{ font-family:'Inter',system-ui,sans-serif; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--doc-faint); }
+.dash .rpf-histo{ display:flex; align-items:flex-end; gap:8px; height:96px; flex:1; border-bottom:1px solid var(--doc-rule); padding-bottom:0; position:relative; }
+.dash .rpf-histo-col{ flex:1; max-width:48px; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; position:relative; }
+.dash .rpf-histo-bar{ width:100%; background:var(--doc-accent); border-radius:4px 4px 0 0; }
+.dash .rpf-histo-count{ font-family:'Inter',system-ui,sans-serif; font-size:11px; font-weight:600; color:var(--doc-ink); margin-bottom:3px; min-height:14px; font-variant-numeric:tabular-nums; }
+.dash .rpf-histo-lab{ position:absolute; top:100%; margin-top:4px; font-family:'Inter',system-ui,sans-serif; font-size:10px; color:var(--doc-faint); white-space:nowrap; }
+.dash .rpf-histo{ margin-bottom:24px; }
+.dash .rpf-histo-wide{ margin-bottom:34px; }
+
 /* numeric summary */
 .dash .rpf-numeric{ display:flex; gap:40px; }
 .dash .rpf-numeric b{ display:block; font-family:'Inter',system-ui,sans-serif; font-size:20px; font-weight:700; color:var(--doc-ink); }

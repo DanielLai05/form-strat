@@ -1,7 +1,7 @@
-import { pct } from '../../lib/stats'
+import { pct, orderedEntries } from '../../lib/stats'
 
-export function FigureBars({ distribution, answered }) {
-  const entries = Object.entries(distribution || {}).sort((a, b) => b[1] - a[1])
+export function FigureBars({ field }) {
+  const entries = orderedEntries(field.distribution, field.options, field.type)
   if (entries.length === 0) return <p className="rp-nodata">No answers recorded.</p>
   const max = Math.max(...entries.map(([, c]) => c))
   return (
@@ -14,7 +14,7 @@ export function FigureBars({ distribution, answered }) {
           </span>
           <span className="rpf-bar-value">
             {count}
-            <em>{answered ? ` (${pct(count / answered)})` : ''}</em>
+            <em>{field.answered ? ` (${pct(count / field.answered)})` : ''}</em>
           </span>
         </div>
       ))}
@@ -57,14 +57,62 @@ export function FigureColumns({ series }) {
   )
 }
 
-export function FigureNumeric({ numeric }) {
-  if (!numeric) return <p className="rp-nodata">No numeric answers recorded.</p>
+export function FigureRating({ field, scale }) {
+  if (!field.numeric) return <p className="rp-nodata">No answers recorded.</p>
+  const dist = field.ratingDistribution || {}
+  const steps = Array.from({ length: scale }, (_, i) => i + 1)
+  const max = Math.max(1, ...steps.map((s) => dist[s] || 0))
   return (
-    <div className="rpf-numeric">
-      <div><b>{numeric.count}</b><span>n</span></div>
-      <div><b>{numeric.min}</b><span>Minimum</span></div>
-      <div><b>{numeric.mean}</b><span>Mean</span></div>
-      <div><b>{numeric.max}</b><span>Maximum</span></div>
+    <div className="rpf-rating">
+      <div className="rpf-rating-hero">
+        <b>{field.numeric.mean}</b>
+        <span>mean of {field.numeric.count}</span>
+      </div>
+      <div className="rpf-histo">
+        {steps.map((s) => {
+          const count = dist[s] || 0
+          return (
+            <div className="rpf-histo-col" key={s}>
+              <span className="rpf-histo-count">{count > 0 ? count : ''}</span>
+              <div
+                className="rpf-histo-bar"
+                style={{ height: `${Math.max(2, (count / max) * 100)}%` }}
+              ></div>
+              <span className="rpf-histo-lab">{s}★</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export function FigureNumberBins({ field }) {
+  if (!field.numeric) return <p className="rp-nodata">No numeric answers recorded.</p>
+  const bins = field.bins || []
+  const max = Math.max(1, ...bins.map((b) => b.count))
+  return (
+    <div>
+      {bins.length > 1 && (
+        <div className="rpf-histo rpf-histo-wide">
+          {bins.map((b, i) => (
+            <div className="rpf-histo-col" key={i}>
+              <span className="rpf-histo-count">{b.count > 0 ? b.count : ''}</span>
+              <div
+                className="rpf-histo-bar"
+                style={{ height: `${Math.max(2, (b.count / max) * 100)}%` }}
+              ></div>
+              <span className="rpf-histo-lab">{b.from}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="rpf-numeric">
+        <div><b>{field.numeric.count}</b><span>n</span></div>
+        <div><b>{field.numeric.min}</b><span>Minimum</span></div>
+        <div><b>{field.numeric.mean}</b><span>Mean</span></div>
+        <div><b>{field.numeric.max}</b><span>Maximum</span></div>
+      </div>
     </div>
   )
 }
