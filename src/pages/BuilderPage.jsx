@@ -43,6 +43,7 @@ function BuilderPage() {
   const [mode, setMode] = useState('build')
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [toastVariant, setToastVariant] = useState('success')
   const [uploadingBanner, setUploadingBanner] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
   const [previewAnswers, setPreviewAnswers] = useState({})
@@ -67,9 +68,10 @@ function BuilderPage() {
     [fields, selectedId]
   )
 
-  const showToast = (message) => {
+  const showToast = (message, variant = 'success') => {
     setToast(message)
-    setTimeout(() => setToast(''), 2500)
+    setToastVariant(variant)
+    setTimeout(() => setToast(''), 3000)
   }
 
   const addField = (type, index) => {
@@ -123,7 +125,7 @@ function BuilderPage() {
     try {
       await apiFetch(`/forms/${formId}`, { method: 'PATCH', body: { bannerUrl: url } })
     } catch (err) {
-      alert(`Couldn't save banner: ${err.message}`)
+      showToast(`Couldn't save banner: ${err.message}`, 'error')
     }
   }
 
@@ -134,7 +136,7 @@ function BuilderPage() {
       setBannerUrl(url)
       await persistBanner(url)
     } catch (err) {
-      alert(`Couldn't upload banner: ${err.message}`)
+      showToast(`Couldn't upload banner: ${err.message}`, 'error')
     } finally {
       setUploadingBanner(false)
     }
@@ -147,7 +149,7 @@ function BuilderPage() {
 
   const handleShare = async () => {
     if (!formId) {
-      alert('Save the form first to get a shareable link.')
+      showToast('Save the form first to get a shareable link.', 'error')
       return
     }
     const url = `${window.location.origin}/form/${formId}`
@@ -190,7 +192,7 @@ function BuilderPage() {
         navigate(`/builder/${res.data.id}`, { replace: true })
       }
     } catch (err) {
-      alert(`Couldn't save: ${err.message}`)
+      showToast(`Couldn't save: ${err.message}`, 'error')
     } finally {
       setSaving(false)
     }
@@ -261,7 +263,7 @@ function BuilderPage() {
         </section>
       )}
 
-      <Toast message={toast} onClose={() => setToast('')} />
+      <Toast message={toast} variant={toastVariant} onClose={() => setToast('')} />
     </div>
   )
 }

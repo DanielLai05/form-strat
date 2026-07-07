@@ -6,6 +6,7 @@ import DashboardSidebar from '../components/dashboard/DashboardSidebar'
 import DashboardTopbar from '../components/dashboard/DashboardTopbar'
 import AiPromptModal from '../components/AiPromptModal'
 import Toast from '../components/Toast'
+import ConfirmModal from '../components/ConfirmModal'
 import './DashboardPage.css'
 import './FormsPage.css'
 
@@ -80,6 +81,9 @@ function FormsPage() {
   const [search, setSearch] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
   const [toast, setToast] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -143,14 +147,19 @@ function FormsPage() {
     }
   }
 
-  const deleteOne = async (id) => {
-    if (!window.confirm('Delete this form? This cannot be undone.')) return
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError('')
     try {
-      await apiFetch(`/forms/${id}`, { method: 'DELETE' })
-      setForms((f) => f.filter((x) => x.id !== id))
+      await apiFetch(`/forms/${deleteTarget.id}`, { method: 'DELETE' })
+      setForms((f) => f.filter((x) => x.id !== deleteTarget.id))
+      setDeleteTarget(null)
       showToast('Form deleted')
     } catch (err) {
-      alert(`Couldn't delete: ${err.message}`)
+      setDeleteError(err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -265,7 +274,7 @@ function FormsPage() {
                               onView={() => navigate(`/forms/${form.id}`)}
                               onEdit={() => navigate(`/builder/${form.id}`)}
                               onCopyLink={() => copyLink(form.id)}
-                              onDelete={() => deleteOne(form.id)}
+                              onDelete={() => { setDeleteError(''); setDeleteTarget(form) }}
                             />
                           </div>
                         </td>
@@ -296,6 +305,23 @@ function FormsPage() {
         onGenerated={handleGenerated}
         onStartBlank={startBlank}
       />
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Delete this form?"
+        confirmLabel="Delete form"
+        busy={deleting}
+        error={deleteError}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      >
+        <p className="mb-2">
+          You&apos;re about to delete <b>{deleteTarget?.title}</b>
+          {(deleteTarget?.submissionCount ?? 0) > 0 && (
+            <> and its <b>{deleteTarget.submissionCount}</b> response{deleteTarget.submissionCount !== 1 ? 's' : ''}</>
+          )}.
+        </p>
+        <p className="text-secondary small mb-0">This cannot be undone.</p>
+      </ConfirmModal>
       <Toast message={toast} onClose={() => setToast('')} />
     </div>
   )
