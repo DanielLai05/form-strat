@@ -31,7 +31,7 @@ function FieldPreview({ field }) {
   const placeholder = {
     text: 'Short answer text',
     email: 'name@example.com',
-    tel: '+1 555 000 0000',
+    tel: '012-345 6789',
     number: '0',
     date: 'mm / dd / yyyy',
     file: 'Choose a file…',

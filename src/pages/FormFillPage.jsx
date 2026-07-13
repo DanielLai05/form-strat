@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import FormRenderer from '../components/form/FormRenderer'
 import { fieldKey } from '../lib/fieldTypes'
+import { isValidMyPhone } from '../lib/phone'
 
 const isBlank = (v) =>
   v === undefined ||
@@ -61,6 +62,16 @@ function FormFillPage() {
     )
     if (missing) {
       setError(`Please answer: ${missing.label}`)
+      return
+    }
+    const badPhone = (form.fields || []).find(
+      (f) =>
+        f.type === 'tel' &&
+        !isBlank(answers[fieldKey(f)]) &&
+        !isValidMyPhone(answers[fieldKey(f)])
+    )
+    if (badPhone) {
+      setError(`Please enter a valid Malaysian phone number for: ${badPhone.label}`)
       return
     }
     setError('')

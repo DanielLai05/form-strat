@@ -1,3 +1,5 @@
+import { formatMyPhone, MY_PHONE_PLACEHOLDER } from '../../lib/phone'
+
 /**
  * Renders a real, fillable input for a form field (used on the public fill page).
  * Controlled via `value` / `onChange`. For checkboxes, value is an array.
@@ -107,8 +109,23 @@ function FieldInput({ field, value, onChange, disabled }) {
         })}
       </div>
     )
+  } else if (type === 'tel') {
+    control = (
+      <input
+        id={id}
+        type="tel"
+        inputMode="tel"
+        className="form-control"
+        value={value || ''}
+        onChange={(e) => onChange(formatMyPhone(e.target.value))}
+        placeholder={placeholder || MY_PHONE_PLACEHOLDER}
+        maxLength={13}
+        required={required}
+        disabled={disabled}
+      />
+    )
   } else {
-    // text, email, tel, number, date, file
+    // text, email, number, date, file
     const inputType = type === 'file' ? 'file' : type
     control = (
       <input
